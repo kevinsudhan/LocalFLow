@@ -75,6 +75,7 @@
       "icons/icon.ico"
     ],
     "resources": {
+      "python-runtime": "python-runtime",
       "../../backend": "backend",
       "icons/tray-active.png": "icons/tray-active.png",
       "icons/tray-paused.png": "icons/tray-paused.png",
