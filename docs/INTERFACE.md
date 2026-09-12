@@ -187,11 +187,15 @@ History can be disabled entirely, and audio retention is off by default. See
 
 ## Settings
 
-![Appearance settings](images/settings-appearance-dark.png)
+![General settings](images/settings-dark.png)
 
 Settings apply immediately and are stored in SQLite on this machine. The
 sections are grouped by what they affect rather than by which process implements
-them.
+them. `General` is the short list: whether LocalFlow starts with Windows,
+whether it opens to the tray, the writing style to use when an application has
+no style of its own, and a button that re-runs setup.
+
+![Appearance settings](images/settings-appearance-dark.png)
 
 `Appearance` carries the theme switch, the HUD position, and two accessibility
 options: `Reduce motion` removes animation throughout the application and the
