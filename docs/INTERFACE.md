@@ -26,6 +26,22 @@ the application it was inserted into, how long ago, and whether the local
 language model was involved. Entries marked `refined` went through the cleanup
 model; the rest were handled entirely by the deterministic pipeline.
 
+Between them sits `Response time`: the last forty dictations, drawn as two
+lines on one scale. The solid line is the time from the moment you stop speaking
+to text appearing. Recording is excluded, because that is how long you chose to
+talk rather than a cost the app imposes. The dashed line is the share of it
+spent in the local language model, so where that line sits on the floor the
+deterministic pipeline did the whole job on its own.
+
+A ring marks a dictation where the model ran and the validator then rejected its
+output. That time was spent and nothing came back for it, which no average would
+ever show you. Hovering any point gives the exact split for that dictation.
+
+Three figures sit above the graph: median response, the share of dictations that
+called the model, and the median time those calls took. If the second number is
+high and the rings are frequent, an application profile is asking for a rewriting
+style on text that does not need one; `Settings > AI` is where that is changed.
+
 The `Engine` panel on the right is a compact health check:
 
 - **Speech** is the Whisper model, the device it loaded on and the precision.

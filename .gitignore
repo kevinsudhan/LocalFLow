@@ -38,3 +38,10 @@ desktop.ini
 .devdata/
 *.db-shm
 *.db-wal
+
+# Loose screenshots dropped in the project root. Documentation images live in
+# docs/images and are added deliberately; anything else here is a stray.
+/Screenshot*.png
+/*.png
+/*.jpg
+/*.jpeg
