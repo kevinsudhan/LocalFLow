@@ -353,13 +353,29 @@ export interface PrivacyReport {
   data_dir: string;
 }
 
+/** One dictation's timings, for the dashboard graph. */
+export interface LlmPoint {
+  id: number;
+  at: string;
+  /** The model ran. */
+  llm_ran: boolean;
+  /** Its output survived the validator and was inserted. */
+  used_llm: boolean;
+  llm_ms: number;
+  asr_ms: number;
+  /** End of speech to inserted text. Excludes how long you spoke. */
+  response_ms: number;
+}
+
 export interface QualitySnapshot {
   inserted: number;
   edited: number;
   undone: number;
   zero_edit_rate: number;
   llm_rate: number;
+  llm_ran_rate: number;
   latency: Record<string, number>;
+  llm_series: LlmPoint[];
   by_app: Array<{
     app: string;
     dictations: number;

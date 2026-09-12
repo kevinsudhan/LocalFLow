@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import type { Route } from "../components/layout/Shell";
 import { Button, Card, Meter, PageHeader, StatusDot } from "../components/ui";
 import { Icon, type IconName } from "../components/ui/Icon";
+import { LatencyGraph } from "../components/ui/LatencyGraph";
 import { api, onBackend } from "../services/bridge";
 import { useAppStore } from "../stores/appStore";
-import type { HistoryItem, HistoryStats } from "../types";
+import type { HistoryItem, HistoryStats, QualitySnapshot } from "../types";
 
 export function Dashboard({ onNavigate }: { onNavigate(route: Route): void }) {
   const settings = useAppStore((s) => s.settings);
@@ -17,16 +18,25 @@ export function Dashboard({ onNavigate }: { onNavigate(route: Route): void }) {
 
   const [stats, setStats] = useState<HistoryStats | null>(null);
   const [recent, setRecent] = useState<HistoryItem[]>([]);
+  const [quality, setQuality] = useState<QualitySnapshot | null>(null);
   const [level, setLevel] = useState(0);
 
-  const load = () =>
-    api
+  const load = () => {
+    void api
       .historyList("", 5)
       .then((result) => {
         setStats(result.stats);
         setRecent(result.items);
       })
       .catch(() => undefined);
+    // Separate call, and separately allowed to fail: the dashboard is still
+    // useful without the graph, and it must not be blank because one query was
+    // slow.
+    void api
+      .quality(7)
+      .then(setQuality)
+      .catch(() => undefined);
+  };
 
   useEffect(() => {
     void load();
@@ -39,6 +49,10 @@ export function Dashboard({ onNavigate }: { onNavigate(route: Route): void }) {
 
   const hotkey = settings?.hotkeys.primary ?? "Ctrl+Space";
   const minutes = stats ? Math.round(stats.speech_ms / 60000) : 0;
+  const series = quality?.llm_series ?? [];
+  const llmCalls = series.filter((point) => point.llm_ran);
+  const llmMedian = median(llmCalls.map((point) => point.llm_ms));
+  const responseMedian = median(series.map((point) => point.response_ms));
 
   return (
     <div>
@@ -108,6 +122,28 @@ export function Dashboard({ onNavigate }: { onNavigate(route: Route): void }) {
         <Stat label="Total dictations" value={stats?.total ?? 0} icon="history" />
         <Stat label="Minutes spoken" value={minutes} icon="pulse" />
       </div>
+
+      <Card className="mb-4">
+        <div className="flex items-baseline justify-between px-5 pb-1 pt-4">
+          <div>
+            <h2 className="text-[14px] font-semibold tracking-tight text-ink">Response time</h2>
+            <p className="mt-0.5 text-2xs text-muted">
+              From the moment you stop speaking to text on screen, across your last
+              {" "}
+              {series.length || "few"} dictations.
+            </p>
+          </div>
+          <div className="flex gap-5 text-right">
+            <Figure label="Median" value={responseMedian ? `${Math.round(responseMedian)} ms` : "-"} />
+            <Figure
+              label="Used AI"
+              value={series.length ? `${Math.round((llmCalls.length / series.length) * 100)}%` : "-"}
+            />
+            <Figure label="AI median" value={llmMedian ? `${Math.round(llmMedian)} ms` : "none"} />
+          </div>
+        </div>
+        <LatencyGraph points={series} />
+      </Card>
 
       <div className="grid grid-cols-[1.5fr_1fr] gap-4">
         <Card>
@@ -192,6 +228,22 @@ export function Dashboard({ onNavigate }: { onNavigate(route: Route): void }) {
       </div>
     </div>
   );
+}
+
+function Figure({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-2xs text-faint">{label}</p>
+      <p className="font-mono text-[13px] tabular-nums text-ink">{value}</p>
+    </div>
+  );
+}
+
+function median(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
 function Stat({ label, value, icon }: { label: string; value: number; icon: IconName }) {

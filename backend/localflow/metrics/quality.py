@@ -31,8 +31,10 @@ class QualitySnapshot:
     undone: int = 0
     zero_edit_rate: float = 0.0
     llm_rate: float = 0.0
+    llm_ran_rate: float = 0.0
     latency: dict[str, float] = field(default_factory=dict)
     by_app: list[dict[str, Any]] = field(default_factory=list)
+    llm_series: list[dict[str, Any]] = field(default_factory=list)
     window_days: int = 30
 
     def as_dict(self) -> dict[str, Any]:
@@ -42,8 +44,10 @@ class QualitySnapshot:
             "undone": self.undone,
             "zero_edit_rate": round(self.zero_edit_rate, 4),
             "llm_rate": round(self.llm_rate, 4),
+            "llm_ran_rate": round(self.llm_ran_rate, 4),
             "latency": self.latency,
             "by_app": self.by_app,
+            "llm_series": self.llm_series,
             "window_days": self.window_days,
             "sample_is_small": self.inserted < 20,
         }
@@ -119,6 +123,10 @@ class QualityMetrics:
         )
         snapshot.latency = self._latency(window)
         snapshot.by_app = self._by_app(window)
+        snapshot.llm_series = self._llm_series(window)
+        ran = sum(1 for point in snapshot.llm_series if point["llm_ran"])
+        if snapshot.llm_series:
+            snapshot.llm_ran_rate = ran / len(snapshot.llm_series)
         return snapshot
 
     def _latency(self, window: str) -> dict[str, float]:
@@ -145,6 +153,58 @@ class QualityMetrics:
             out[f"{key}_median"] = round(statistics.median(ordered), 1)
             index = max(0, int(len(ordered) * 0.95) - 1)
             out[f"{key}_p95"] = round(ordered[index], 1)
+        return out
+
+    def _llm_series(self, window: str, limit: int = 40) -> list[dict[str, Any]]:
+        """Per-dictation timings, oldest first, for the dashboard graph.
+
+        A median tells you the language model is slow; it does not tell you that
+        the slow ones are the first call after it was unloaded. The series does,
+        because a reload stands out as a spike rather than being averaged away.
+
+        Dictations that never reached the language model are kept, with
+        `llm_ms` of zero. Dropping them would make the graph look like the model
+        runs on everything, which is the opposite of what it shows.
+        """
+        rows = self.db.query(
+            "SELECT id, created_at, used_llm, latency FROM history"
+            " WHERE inserted=1 AND created_at >= datetime('now', ?)"
+            " ORDER BY id DESC LIMIT ?",
+            (window, limit),
+        )
+        out: list[dict[str, Any]] = []
+        for row in reversed(rows):
+            try:
+                payload = json.loads(row["latency"] or "{}")
+            except (ValueError, TypeError):
+                payload = {}
+
+            def ms(key: str) -> float:
+                value = payload.get(key)
+                return round(float(value), 1) if isinstance(value, (int, float)) else 0.0
+
+            llm_ms = ms("llm_ms")
+            # Time from the end of speech to inserted text. Recording is
+            # excluded: that is how long the user chose to speak, not a cost.
+            total, record = ms("total_ms"), ms("record_ms")
+            response = total - record if total > record else (
+                ms("vad_ms") + ms("asr_ms") + ms("process_ms")
+            )
+            out.append(
+                {
+                    "id": int(row["id"]),
+                    "at": row["created_at"],
+                    # Whether the model ran, and whether its output survived the
+                    # validator. These are not the same thing: a rewrite that
+                    # drops a number is rejected, and the time it cost is real
+                    # either way.
+                    "llm_ran": llm_ms > 0,
+                    "used_llm": bool(row["used_llm"]),
+                    "llm_ms": llm_ms,
+                    "asr_ms": ms("asr_ms"),
+                    "response_ms": round(response, 1),
+                }
+            )
         return out
 
     def _by_app(self, window: str, limit: int = 12) -> list[dict[str, Any]]:
