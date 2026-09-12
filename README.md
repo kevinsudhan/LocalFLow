@@ -1,5 +1,7 @@
 # LocalFlow
 
+![LocalFlow](docs/images/poster-overview.png)
+
 Voice as a first-class input method for Windows.
 
 Hold a key in any application, speak, let go - polished text appears at your
@@ -29,6 +31,8 @@ There is no account, no server, and no telemetry.
 | **Knows where it is** | Professional prose in Outlook, casual in Slack, verbatim in a terminal, identifier-safe in VS Code |
 | **Learns your words** | Names, products and jargon you add - plus spellings it picks up from your own edits |
 | **Never leaves the PC** | Audio stays in memory, transcription is local, the AI model is local |
+
+![What LocalFlow does](docs/images/poster-features.png)
 
 ---
 

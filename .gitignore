@@ -45,3 +45,9 @@ desktop.ini
 /*.png
 /*.jpg
 /*.jpeg
+
+# Installer build output. scripts/build.ps1 -Installer downloads an embeddable
+# Python and installs the backend requirements into it; both are derived, large,
+# and machine-specific.
+/.cache/
+desktop/src-tauri/python-runtime/
