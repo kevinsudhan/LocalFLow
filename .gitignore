@@ -1,0 +1,40 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Node
+node_modules/
+desktop/dist/
+
+# Rust and Tauri build output
+desktop/src-tauri/target/
+desktop/src-tauri/gen/
+
+# Downloaded models. These are large and are fetched on first run.
+models/
+*.onnx
+*.bin
+*.safetensors
+
+# Generated icons
+desktop/src-tauri/icons/*.png
+desktop/src-tauri/icons/*.ico
+
+# Local data and logs
+*.db
+*.log
+benchmarks/results/
+
+# Editor and OS noise
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# Local benchmark scratch and database side-files
+.devdata/
+*.db-shm
+*.db-wal

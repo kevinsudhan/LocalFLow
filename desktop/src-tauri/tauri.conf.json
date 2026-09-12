@@ -1,0 +1,97 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "LocalFlow",
+  "version": "1.0.0",
+  "identifier": "com.localflow.desktop",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "macOSPrivateApi": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "LocalFlow",
+        "url": "index.html",
+        "width": 1160,
+        "height": 780,
+        "minWidth": 900,
+        "minHeight": 620,
+        "resizable": true,
+        "center": true,
+        "visible": false,
+        "decorations": true,
+        "transparent": false,
+        "skipTaskbar": false,
+        "dragDropEnabled": false
+      },
+      {
+        "label": "hud",
+        "title": "LocalFlow HUD",
+        "url": "index.html#/hud",
+        "width": 520,
+        "height": 92,
+        "resizable": false,
+        "visible": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "focus": false,
+        "shadow": false,
+        "center": false,
+        "maximizable": false,
+        "minimizable": false,
+        "closable": false,
+        "dragDropEnabled": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: http://asset.localhost; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost; media-src 'self' asset: http://asset.localhost",
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["$APPDATA/LocalFlow/audio/*"]
+      }
+    },
+    "trayIcon": {
+      "id": "localflow-tray",
+      "iconPath": "icons/tray-active.png",
+      "iconAsTemplate": false,
+      "tooltip": "LocalFlow",
+      "menuOnLeftClick": false
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "../../backend": "backend",
+      "icons/tray-active.png": "icons/tray-active.png",
+      "icons/tray-paused.png": "icons/tray-paused.png",
+      "icons/tray-recording.png": "icons/tray-recording.png",
+      "icons/tray-processing.png": "icons/tray-processing.png"
+    },
+    "copyright": "LocalFlow",
+    "category": "Productivity",
+    "shortDescription": "Local voice dictation for Windows",
+    "longDescription": "LocalFlow turns speech into polished text anywhere in Windows. Speech recognition and AI cleanup run entirely on your machine - no cloud, no telemetry.",
+    "windows": {
+      "allowDowngrades": true,
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["English"],
+        "displayLanguageSelector": false
+      }
+    }
+  }
+}

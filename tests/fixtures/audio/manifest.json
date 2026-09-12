@@ -1,0 +1,13 @@
+﻿{
+    "silence_lead":  "The shipment has been delayed.",
+    "email":  "Hi Rahul, I wanted to let you know that customs has delayed the shipment by two days.",
+    "fillers":  "Um, so, basically I think we should, uh, ship the order today.",
+    "question":  "Can you send this today?",
+    "technical":  "Please update the fast API endpoint and redeploy the container.",
+    "numbers":  "The total is four thousand five hundred rupees, due on the fifteenth of March.",
+    "normal":  "Can you send Rahul the quotation on Friday.",
+    "correction":  "I will send it Monday. Actually Tuesday.",
+    "long":  "Good morning everyone. I wanted to give a quick update on the shipment status. The container cleared customs yesterday evening and is now on its way to the warehouse. We expect delivery by Thursday afternoon. I will share the tracking details shortly.",
+    "correction_name":  "Send it to Rahul. No, send it to Karthik.",
+    "list":  "Things I need to do. One, finish the C R M. Two, fix Outlook. Three, test the parser."
+}

@@ -1,0 +1,948 @@
+{
+  "summary": {
+    "text_cases": 55,
+    "text_passed": 55,
+    "zero_edit_rate": 1.0,
+    "by_group": {
+      "commands": {
+        "passed": 5,
+        "total": 5,
+        "rate": 1.0
+      },
+      "context": {
+        "passed": 3,
+        "total": 3,
+        "rate": 1.0
+      },
+      "correction": {
+        "passed": 6,
+        "total": 6,
+        "rate": 1.0
+      },
+      "developer": {
+        "passed": 3,
+        "total": 3,
+        "rate": 1.0
+      },
+      "edge": {
+        "passed": 2,
+        "total": 2,
+        "rate": 1.0
+      },
+      "email": {
+        "passed": 2,
+        "total": 2,
+        "rate": 1.0
+      },
+      "fillers": {
+        "passed": 6,
+        "total": 6,
+        "rate": 1.0
+      },
+      "lists": {
+        "passed": 6,
+        "total": 6,
+        "rate": 1.0
+      },
+      "long": {
+        "passed": 1,
+        "total": 1,
+        "rate": 1.0
+      },
+      "multilingual": {
+        "passed": 2,
+        "total": 2,
+        "rate": 1.0
+      },
+      "normal": {
+        "passed": 3,
+        "total": 3,
+        "rate": 1.0
+      },
+      "numbers": {
+        "passed": 4,
+        "total": 4,
+        "rate": 1.0
+      },
+      "punctuation": {
+        "passed": 3,
+        "total": 3,
+        "rate": 1.0
+      },
+      "quotes": {
+        "passed": 2,
+        "total": 2,
+        "rate": 1.0
+      },
+      "safety": {
+        "passed": 2,
+        "total": 2,
+        "rate": 1.0
+      },
+      "snippets": {
+        "passed": 1,
+        "total": 1,
+        "rate": 1.0
+      },
+      "style": {
+        "passed": 2,
+        "total": 2,
+        "rate": 1.0
+      },
+      "vocabulary": {
+        "passed": 2,
+        "total": 2,
+        "rate": 1.0
+      }
+    },
+    "llm_invocation_rate": 0.127,
+    "text_latency_ms": {
+      "median": 1.6,
+      "p95": 1113.0
+    },
+    "audio_cases": 11,
+    "mean_wer": 0.0511,
+    "median_total_ms": 769.7,
+    "median_realtime_factor": 0.179
+  },
+  "text": [
+    {
+      "id": "plain-statement",
+      "group": "normal",
+      "input": "the shipment has been delayed by two days",
+      "output": "The shipment has been delayed by two days.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 3.8
+    },
+    {
+      "id": "plain-question",
+      "group": "normal",
+      "input": "can you send this today",
+      "output": "Can you send this today?",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 0.5
+    },
+    {
+      "id": "greeting",
+      "group": "normal",
+      "input": "hello John how are you",
+      "output": "Hello John how are you.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 0.5
+    },
+    {
+      "id": "fillers-hesitation",
+      "group": "fillers",
+      "input": "uh can you send Rahul the quotation tomorrow",
+      "output": "Can you send Rahul the quotation tomorrow?",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 1.0
+    },
+    {
+      "id": "fillers-discourse",
+      "group": "fillers",
+      "input": "so, you know, the container is, like, still at customs",
+      "output": "So, the container is, still at customs.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 0.8
+    },
+    {
+      "id": "fillers-meaningful-actually",
+      "group": "fillers",
+      "input": "The actual figure was higher than the estimate.",
+      "output": "The actual figure was higher than the estimate.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 0.8
+    },
+    {
+      "id": "fillers-kind-of-noun",
+      "group": "fillers",
+      "input": "I need a kind of folder that seals properly.",
+      "output": "I need a kind of folder that seals properly.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 0.8
+    },
+    {
+      "id": "correction-weekday",
+      "group": "correction",
+      "input": "I'll send it Monday... actually Tuesday.",
+      "output": "I'll send it Tuesday.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 1.0
+    },
+    {
+      "id": "correction-name",
+      "group": "correction",
+      "input": "Send it to Rahul... no, send it to Karthik.",
+      "output": "Send it to Karthik.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 0.7
+    },
+    {
+      "id": "correction-time",
+      "group": "correction",
+      "input": "The meeting is at 4... wait, make that 4:30.",
+      "output": "The meeting is at 4:30.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 0.7
+    },
+    {
+      "id": "correction-city",
+      "group": "correction",
+      "input": "The shipment goes to Chennai, actually Bangalore.",
+      "output": "The shipment goes to Bangalore.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 0.7
+    },
+    {
+      "id": "correction-amount",
+      "group": "correction",
+      "input": "The total is 500, I meant 5000.",
+      "output": "The total is 5000.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 0.6
+    },
+    {
+      "id": "correction-mid-sentence",
+      "group": "correction",
+      "input": "can you send Rahul the quotation tomorrow, actually no, Friday, and tell him customs has delayed the shipment",
+      "output": "Can you send Rahul the quotation Friday, and tell him customs has delayed the shipment?",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 1.4
+    },
+    {
+      "id": "numbers-preserved",
+      "group": "numbers",
+      "input": "the invoice total is 4500 rupees due on the 15th of March",
+      "output": "The invoice total is 4500 rupees due on the 15th of March.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 0.7
+    },
+    {
+      "id": "numbers-not-a-list",
+      "group": "numbers",
+      "input": "I need two boxes and three pallets for this order.",
+      "output": "I need two boxes and three pallets for this order.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 0.8
+    },
+    {
+      "id": "list-explicit",
+      "group": "lists",
+      "input": "Things I need to do. One finish the CRM. Two fix Outlook. Three test ICEGATE.",
+      "output": "Things I need to do:\n\n1. Finish the CRM\n2. Fix Outlook\n3. Test ICEGATE",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 1.1
+    },
+    {
+      "id": "list-inline",
+      "group": "lists",
+      "input": "One call the supplier two confirm the booking three send the invoice",
+      "output": "1. Call the supplier\n2. Confirm the booking\n3. Send the invoice",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 0.9
+    },
+    {
+      "id": "vocabulary-known-term",
+      "group": "vocabulary",
+      "input": "please check the ice gate filing for this shipment",
+      "output": "Please check the ICEGATE filing for this shipment.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 0.7
+    },
+    {
+      "id": "vocabulary-fuzzy",
+      "group": "vocabulary",
+      "input": "we run everything through Olama locally",
+      "output": "We run everything through Ollama locally.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 0.5
+    },
+    {
+      "id": "snippet-signature",
+      "group": "snippets",
+      "input": "insert my email signature",
+      "output": "Best regards,\nYour Name",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "",
+      "latency_ms": 0.1
+    },
+    {
+      "id": "command-undo",
+      "group": "commands",
+      "input": "undo that",
+      "output": "",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "",
+      "latency_ms": 0.1
+    },
+    {
+      "id": "command-not-triggered",
+      "group": "commands",
+      "input": "Can you undo that change in the spreadsheet please?",
+      "output": "Can you undo that change in the spreadsheet please?",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 0.7
+    },
+    {
+      "id": "terminal-verbatim",
+      "group": "developer",
+      "input": "git commit dash m fix the parser",
+      "output": "git commit - m fix the parser",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "disabled_for_app",
+      "latency_ms": 0.4
+    },
+    {
+      "id": "developer-identifiers",
+      "group": "developer",
+      "input": "update the getShipmentStatus function in shipment_service.py",
+      "output": "Update the getShipmentStatus function in shipment_service.py.",
+      "passed": true,
+      "reason": "",
+      "used_llm": true,
+      "gate": "style_developer",
+      "latency_ms": 1382.8
+    },
+    {
+      "id": "developer-url",
+      "group": "developer",
+      "input": "the docs are at https://example.com/api/v2/shipments",
+      "output": "The docs are at https://example.com/api/v2/shipments.",
+      "passed": true,
+      "reason": "",
+      "used_llm": true,
+      "gate": "style_developer",
+      "latency_ms": 1060.7
+    },
+    {
+      "id": "continuation-mid-sentence",
+      "group": "context",
+      "input": "the shipment has been delayed",
+      "output": "the shipment has been delayed.",
+      "passed": true,
+      "reason": "",
+      "used_llm": true,
+      "gate": "style_professional",
+      "latency_ms": 588.7
+    },
+    {
+      "id": "continuation-new-sentence",
+      "group": "context",
+      "input": "the shipment has been delayed",
+      "output": "The shipment has been delayed.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 1.6
+    },
+    {
+      "id": "context-no-hallucination",
+      "group": "context",
+      "input": "send it to doctor Agarwal",
+      "output": "Send it to doctor Agarwal.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 1.7
+    },
+    {
+      "id": "spoken-punctuation",
+      "group": "punctuation",
+      "input": "hello Rahul comma please confirm the booking period",
+      "output": "Hello Rahul, please confirm the booking.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 2.4
+    },
+    {
+      "id": "spoken-punct-not-a-command",
+      "group": "punctuation",
+      "input": "the comma is missing from that sentence",
+      "output": "The comma is missing from that sentence.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 2.2
+    },
+    {
+      "id": "new-paragraph",
+      "group": "punctuation",
+      "input": "thanks for the update new paragraph I will confirm tomorrow",
+      "output": "Thanks for the update.\n\nI will confirm tomorrow.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 1.7
+    },
+    {
+      "id": "email-style",
+      "group": "style",
+      "input": "hey can you push the delivery to next week we are short on stock",
+      "output": "Can,\n\nPlease push the delivery to next week; we are short on stock.",
+      "passed": true,
+      "reason": "",
+      "used_llm": true,
+      "gate": "style_professional",
+      "latency_ms": 1113.0
+    },
+    {
+      "id": "messaging-style",
+      "group": "style",
+      "input": "running five minutes late for the call",
+      "output": "Running five minutes late for the call.",
+      "passed": true,
+      "reason": "",
+      "used_llm": true,
+      "gate": "style_casual",
+      "latency_ms": 672.3
+    },
+    {
+      "id": "multilingual-tamil",
+      "group": "multilingual",
+      "input": "Tomorrow shipment \u0bb5\u0ba8\u0bcd\u0ba4\u0bc1 \u0b9a\u0bc7\u0bb0\u0bc1\u0bae\u0bcd so please inform the customer.",
+      "output": "Tomorrow shipment \u0bb5\u0ba8\u0bcd\u0ba4\u0bc1 \u0b9a\u0bc7\u0bb0\u0bc1\u0bae\u0bcd so please inform the customer.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 3.5
+    },
+    {
+      "id": "hinglish",
+      "group": "multilingual",
+      "input": "kal shipment aa jayega so please tell the client",
+      "output": "Kal shipment aa jayega so please tell the client.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 2.1
+    },
+    {
+      "id": "long-dictation",
+      "group": "long",
+      "input": "good morning everyone I wanted to give a quick update on the shipment status the container cleared customs yesterday evening and is now on its way to the warehouse we expect delivery by Thursday afternoon I will share the tracking details shortly",
+      "output": "Good morning, everyone. I wanted to give a quick update on the shipment status. The container cleared customs yesterday evening and is now on its way to the warehouse. We expect delivery by Thursday afternoon. I will share the tracking details shortly.",
+      "passed": true,
+      "reason": "",
+      "used_llm": true,
+      "gate": "run_on_sentence",
+      "latency_ms": 2854.2
+    },
+    {
+      "id": "empty-input",
+      "group": "edge",
+      "input": "   ",
+      "output": "",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "",
+      "latency_ms": 0.3
+    },
+    {
+      "id": "single-word",
+      "group": "edge",
+      "input": "yes",
+      "output": "Yes.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "too_short",
+      "latency_ms": 0.6
+    },
+    {
+      "id": "no-invented-content",
+      "group": "safety",
+      "input": "tell Rahul the container is late",
+      "output": "Tell Rahul the container is late.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 1.6
+    },
+    {
+      "id": "question-stays-question",
+      "group": "safety",
+      "input": "can you send Rahul the report tomorrow",
+      "output": "Can you send Rahul the report tomorrow?",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 1.8
+    },
+    {
+      "id": "quote-explicit",
+      "group": "quotes",
+      "input": "quote I will send the documents by Friday end quote",
+      "output": "\u201cI will send the documents by Friday.\u201d",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 2.1
+    },
+    {
+      "id": "quote-noun-not-command",
+      "group": "quotes",
+      "input": "please send me the quote by Friday",
+      "output": "Please send me the quote by Friday.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 1.8
+    },
+    {
+      "id": "list-ordinal",
+      "group": "lists",
+      "input": "I need three things first call John second email Sarah third submit the report",
+      "output": "I need three things:\n\n1. Call John\n2. Email Sarah\n3. Submit the report",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 3.8
+    },
+    {
+      "id": "list-ordinal-imperative",
+      "group": "lists",
+      "input": "first install Docker second clone the repo third run the application",
+      "output": "1. Install Docker\n2. Clone the repo\n3. Run the application",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 1.8
+    },
+    {
+      "id": "list-bullet",
+      "group": "lists",
+      "input": "bullet call the supplier bullet confirm the booking bullet send the invoice",
+      "output": "- Call the supplier\n- Confirm the booking\n- Send the invoice",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 2.4
+    },
+    {
+      "id": "ordinal-not-a-list",
+      "group": "lists",
+      "input": "The first item is broken and the second one is fine.",
+      "output": "The first item is broken, and the second one is fine.",
+      "passed": true,
+      "reason": "",
+      "used_llm": true,
+      "gate": "disfluent_restart",
+      "latency_ms": 937.8
+    },
+    {
+      "id": "email-shape",
+      "group": "email",
+      "input": "email Sarah saying hi Sarah just wanted to check if we are still on for tomorrow thanks Kevin",
+      "output": "Hi Sarah,\n\nJust wanted to check if we are still on for tomorrow.\n\nThanks,\nKevin",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "style_professional",
+      "latency_ms": 1235.4
+    },
+    {
+      "id": "email-not-triggered",
+      "group": "email",
+      "input": "hi Sarah how are you doing today",
+      "output": "Hi Sarah how are you doing today.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 1.9
+    },
+    {
+      "id": "spoken-time",
+      "group": "numbers",
+      "input": "let us meet at six thirty tomorrow",
+      "output": "Let us meet at 6:30 tomorrow.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 1.7
+    },
+    {
+      "id": "spoken-time-not-a-quantity",
+      "group": "numbers",
+      "input": "I need six thirty litre drums",
+      "output": "I need six thirty litre drums.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 1.8
+    },
+    {
+      "id": "false-start-phrase",
+      "group": "fillers",
+      "input": "um um I mean let us let us do it tomorrow",
+      "output": "Let us do it tomorrow.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 1.7
+    },
+    {
+      "id": "repetition-preserved",
+      "group": "fillers",
+      "input": "that was very very good work",
+      "output": "That was very very good work.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 1.8
+    },
+    {
+      "id": "command-delete-that",
+      "group": "commands",
+      "input": "delete that",
+      "output": "",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "",
+      "latency_ms": 0.4
+    },
+    {
+      "id": "command-replace-that",
+      "group": "commands",
+      "input": "replace that with send it Friday",
+      "output": "",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "",
+      "latency_ms": 0.5
+    },
+    {
+      "id": "command-not-triggered-replace",
+      "group": "commands",
+      "input": "I will replace that with a new one when it arrives",
+      "output": "I will replace that with a new one when it arrives.",
+      "passed": true,
+      "reason": "",
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency_ms": 2.6
+    }
+  ],
+  "audio": [
+    {
+      "id": "audio:silence_lead",
+      "group": "audio",
+      "reference": "The shipment has been delayed.",
+      "raw": "The shipment has been delayed.",
+      "output": "The shipment has been delayed.",
+      "wer": 0.0,
+      "audio_seconds": 4.37,
+      "speech_seconds": 0.0,
+      "trimmed_lead": 0.0,
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency": {
+        "vad_ms": 50.5,
+        "asr_ms": 667.1,
+        "process_ms": 1.0,
+        "llm_ms": 0.0,
+        "total_ms": 718.7
+      },
+      "realtime_factor": 0.164
+    },
+    {
+      "id": "audio:email",
+      "group": "audio",
+      "reference": "Hi Rahul, I wanted to let you know that customs has delayed the shipment by two days.",
+      "raw": "Hi Rahul, I wanted to let you know that customs has delayed the shipment by two days.",
+      "output": "Hi Rahul, I wanted to let you know that customs has delayed the shipment by two days.",
+      "wer": 0.0,
+      "audio_seconds": 5.77,
+      "speech_seconds": 0.0,
+      "trimmed_lead": 0.0,
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency": {
+        "vad_ms": 49.5,
+        "asr_ms": 749.8,
+        "process_ms": 3.8,
+        "llm_ms": 0.0,
+        "total_ms": 803.2
+      },
+      "realtime_factor": 0.139
+    },
+    {
+      "id": "audio:fillers",
+      "group": "audio",
+      "reference": "Um, so, basically I think we should, uh, ship the order today.",
+      "raw": "Um, so, basically I think we should, uh, ship the order today.",
+      "output": "So, I think we should ship the order today.",
+      "wer": 0.0,
+      "audio_seconds": 6.01,
+      "speech_seconds": 0.0,
+      "trimmed_lead": 0.0,
+      "used_llm": true,
+      "gate": "ambiguous_fillers",
+      "latency": {
+        "vad_ms": 56.6,
+        "asr_ms": 709.4,
+        "process_ms": 848.2,
+        "llm_ms": 847.1,
+        "total_ms": 1614.2
+      },
+      "realtime_factor": 0.268
+    },
+    {
+      "id": "audio:question",
+      "group": "audio",
+      "reference": "Can you send this today?",
+      "raw": "Can you send this today?",
+      "output": "Can you send this today?",
+      "wer": 0.0,
+      "audio_seconds": 2.02,
+      "speech_seconds": 0.0,
+      "trimmed_lead": 0.0,
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency": {
+        "vad_ms": 17.7,
+        "asr_ms": 618.6,
+        "process_ms": 1.4,
+        "llm_ms": 0.0,
+        "total_ms": 637.8
+      },
+      "realtime_factor": 0.315
+    },
+    {
+      "id": "audio:technical",
+      "group": "audio",
+      "reference": "Please update the fast API endpoint and redeploy the container.",
+      "raw": "Please update the FastAPI endpoint and redeploy the container",
+      "output": "Please update the FastAPI endpoint and redeploy the container.",
+      "wer": 0.25,
+      "audio_seconds": 4.6,
+      "speech_seconds": 0.0,
+      "trimmed_lead": 0.0,
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency": {
+        "vad_ms": 32.5,
+        "asr_ms": 656.8,
+        "process_ms": 1.5,
+        "llm_ms": 0.0,
+        "total_ms": 690.9
+      },
+      "realtime_factor": 0.15
+    },
+    {
+      "id": "audio:numbers",
+      "group": "audio",
+      "reference": "The total is four thousand five hundred rupees, due on the fifteenth of March.",
+      "raw": "The total is Rs 4,500, due on 15 March.",
+      "output": "The total is Rs 4,500, due on 15 March.",
+      "wer": 0.125,
+      "audio_seconds": 5.57,
+      "speech_seconds": 0.0,
+      "trimmed_lead": 0.0,
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency": {
+        "vad_ms": 50.8,
+        "asr_ms": 716.8,
+        "process_ms": 2.0,
+        "llm_ms": 0.0,
+        "total_ms": 769.7
+      },
+      "realtime_factor": 0.138
+    },
+    {
+      "id": "audio:normal",
+      "group": "audio",
+      "reference": "Can you send Rahul the quotation on Friday.",
+      "raw": "Can you send Rahul the quotation on Friday?",
+      "output": "Can you send Rahul the quotation on Friday?",
+      "wer": 0.0,
+      "audio_seconds": 3.33,
+      "speech_seconds": 0.0,
+      "trimmed_lead": 0.0,
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency": {
+        "vad_ms": 33.6,
+        "asr_ms": 666.5,
+        "process_ms": 1.3,
+        "llm_ms": 0.0,
+        "total_ms": 701.5
+      },
+      "realtime_factor": 0.211
+    },
+    {
+      "id": "audio:correction",
+      "group": "audio",
+      "reference": "I will send it Monday. Actually Tuesday.",
+      "raw": "I will send it Monday. Actually Tuesday.",
+      "output": "I will send it Tuesday.",
+      "wer": 0.0,
+      "audio_seconds": 3.98,
+      "speech_seconds": 0.0,
+      "trimmed_lead": 0.0,
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency": {
+        "vad_ms": 42.7,
+        "asr_ms": 668.6,
+        "process_ms": 1.6,
+        "llm_ms": 0.0,
+        "total_ms": 713.1
+      },
+      "realtime_factor": 0.179
+    },
+    {
+      "id": "audio:long",
+      "group": "audio",
+      "reference": "Good morning everyone. I wanted to give a quick update on the shipment status. The container cleared customs yesterday evening and is now on its way to the warehouse. We expect delivery by Thursday afternoon. I will share the tracking details shortly.",
+      "raw": "Good morning everyone. I wanted to give a quick update on the shipment status. The container cleared customs yesterday evening and is now on its way to the warehouse. We expect delivery by Thursday afternoon. I will share the tracking details shortly.",
+      "output": "Good morning, everyone. I wanted to give a quick update on the shipment status. The container cleared customs yesterday evening and is now on its way to the warehouse. We expect delivery by Thursday afternoon. I will share the tracking details shortly.",
+      "wer": 0.0,
+      "audio_seconds": 17.49,
+      "speech_seconds": 0.0,
+      "trimmed_lead": 0.0,
+      "used_llm": true,
+      "gate": "disfluent_restart",
+      "latency": {
+        "vad_ms": 152.2,
+        "asr_ms": 1018.7,
+        "process_ms": 2819.8,
+        "llm_ms": 2813.4,
+        "total_ms": 3990.8
+      },
+      "realtime_factor": 0.228
+    },
+    {
+      "id": "audio:correction_name",
+      "group": "audio",
+      "reference": "Send it to Rahul. No, send it to Karthik.",
+      "raw": "Send it to Rahul. No, send it to Karthik.",
+      "output": "Send it to Karthik.",
+      "wer": 0.0,
+      "audio_seconds": 4.62,
+      "speech_seconds": 0.0,
+      "trimmed_lead": 0.0,
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency": {
+        "vad_ms": 39.3,
+        "asr_ms": 805.3,
+        "process_ms": 1.1,
+        "llm_ms": 0.0,
+        "total_ms": 845.8
+      },
+      "realtime_factor": 0.183
+    },
+    {
+      "id": "audio:list",
+      "group": "audio",
+      "reference": "Things I need to do. One, finish the C R M. Two, fix Outlook. Three, test the parser.",
+      "raw": "Things I need to do 1. Finish the CRM 2. Fix Outlook 3. Test the parser",
+      "output": "Things I need to do:\n\n1. Finish the CRM\n2. Fix Outlook\n3. Test the parser",
+      "wer": 0.1875,
+      "audio_seconds": 9.64,
+      "speech_seconds": 0.0,
+      "trimmed_lead": 0.0,
+      "used_llm": false,
+      "gate": "deterministic_sufficient",
+      "latency": {
+        "vad_ms": 91.9,
+        "asr_ms": 824.6,
+        "process_ms": 3.3,
+        "llm_ms": 0.0,
+        "total_ms": 919.9
+      },
+      "realtime_factor": 0.095
+    }
+  ]
+}

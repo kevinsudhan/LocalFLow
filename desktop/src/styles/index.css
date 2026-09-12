@@ -1,0 +1,344 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  LocalFlow design language - soft neumorphism.
+
+  Surfaces are extruded from a single background colour using paired shadows: a
+  light source from the top-left and its shadow bottom-right. Controls that
+  *accept* input (fields, wells, the active nav item) are pressed *into* the
+  surface instead; that inset/outset pairing is what makes the interface read
+  as physical rather than as flat cards.
+
+  Neumorphism's usual failure is contrast: everything is one colour, so text
+  gets lost. Here only the *surfaces* are tonal - text, icons and the accent
+  keep full contrast. Every text tone is measured against the raised card it
+  sits on, and all three clear WCAG AA in both themes: ink 15:1 and 13:1,
+  muted 6.8:1 and 5.9:1, and the small-label tone 4.6:1. That last one used
+  to sit at 2.9:1 in light and 3.4:1 in dark, which the comment here claimed
+  was compliant and was not.
+*/
+:root,
+[data-theme="dark"] {
+  --ink: 234 237 245;
+  --muted: 154 161 178;
+  --faint: 134 141 161;
+
+  --surface: 24 26 33; /* the single tone everything is extruded from */
+  --raised: 34 37 47;
+  --sunken: 19 21 27;
+  --line: 48 52 65;
+
+  --nm-light: 48 53 66; /* highlight edge, top-left */
+  --nm-dark: 11 12 16; /* shadow edge, bottom-right */
+  --nm-strength: 0.8;
+  --nm-rim: 0.5; /* the lit top edge that keeps cards from looking printed on */
+
+  --accent: 129 140 248;
+  --accent-2: 94 206 214; /* second light source, ambient only */
+  --accent-ink: 255 255 255;
+  --accent-soft: 54 58 112;
+  --positive: 74 205 154;
+  --warning: 240 184 96;
+  --danger: 242 123 123;
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --ink: 28 32 44;
+  --muted: 78 87 107;
+  --faint: 104 112 132;
+
+  /* Raised and sunken sit well clear of the surface on either side. At four
+     points apart the extrusion was invisible and the whole theme read as flat
+     white; the separation is what makes a soft shadow legible at all. */
+  --surface: 232 234 241;
+  --raised: 246 247 251;
+  --sunken: 221 225 234;
+  --line: 207 213 226;
+
+  --nm-light: 255 255 255;
+  --nm-dark: 158 168 190;
+  --nm-strength: 0.55;
+  --nm-rim: 0.9;
+
+  --accent: 79 70 229;
+  --accent-2: 13 148 156;
+  --accent-ink: 255 255 255;
+  --accent-soft: 224 226 252;
+  --positive: 13 124 88;
+  --warning: 163 100 10;
+  --danger: 199 48 58;
+  color-scheme: light;
+}
+
+/* High contrast trades the softness for legibility, deliberately. */
+[data-contrast="high"] {
+  --ink: 255 255 255;
+  --muted: 226 230 238;
+  --faint: 198 204 214;
+  --line: 132 140 156;
+  --accent: 162 188 255;
+  --nm-strength: 0.35;
+}
+
+[data-contrast="high"][data-theme="light"] {
+  --ink: 0 0 0;
+  --muted: 34 38 46;
+  --faint: 64 70 82;
+  --line: 96 102 116;
+  --accent: 26 54 168;
+  --nm-strength: 0.35;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-surface text-ink font-sans antialiased;
+    /* Two very faint off-screen light sources. A single flat fill is what
+       makes a soft-shadow interface look plain: the shadows have nothing
+       to sit in. These are far too weak to read as colour - they only stop
+       the background being one dead value from corner to corner. */
+    background-image:
+      radial-gradient(1100px 620px at 12% -12%, rgb(var(--accent) / 0.10), transparent 62%),
+      radial-gradient(900px 540px at 108% 6%, rgb(var(--accent-2) / 0.07), transparent 60%);
+    background-attachment: fixed;
+    font-size: 14px;
+    margin: 0;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* The HUD window is transparent; its body must not paint a background. */
+  body[data-window="hud"] {
+    background: transparent;
+    background-image: none;
+    overflow: hidden;
+  }
+
+  ::selection {
+    background: rgb(var(--accent) / 0.3);
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 2px;
+    border-radius: 10px;
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+    letter-spacing: -0.014em;
+  }
+
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--nm-dark) / 0.55);
+    border: 4px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--nm-dark) / 0.85);
+    background-clip: content-box;
+  }
+}
+
+@layer components {
+  /* ---- the neumorphic primitives ---- */
+
+  /* Extruded: cards, buttons at rest, the app chrome. */
+  .nm-raised {
+    background: linear-gradient(150deg, rgb(var(--raised)), rgb(var(--sunken)));
+    box-shadow:
+      9px 9px 22px rgb(var(--nm-dark) / var(--nm-strength)),
+      -7px -7px 18px rgb(var(--nm-light) / calc(var(--nm-strength) * 0.6)),
+      /* A hairline of direct light along the top edge. Without it a card
+         reads as printed onto the page rather than lifted off it, and it
+         costs no layout because it is an inset shadow, not a border. */
+      inset 0 1px 0 rgb(var(--nm-light) / var(--nm-rim));
+  }
+
+  .nm-raised-sm {
+    background: linear-gradient(150deg, rgb(var(--raised)), rgb(var(--sunken)));
+    box-shadow:
+      4px 4px 10px rgb(var(--nm-dark) / calc(var(--nm-strength) * 0.85)),
+      -4px -4px 10px rgb(var(--nm-light) / calc(var(--nm-strength) * 0.55)),
+      inset 0 1px 0 rgb(var(--nm-light) / calc(var(--nm-rim) * 0.75));
+  }
+
+  /* Pressed into the surface: inputs, wells, the selected nav item. */
+  .nm-inset {
+    background: rgb(var(--sunken));
+    box-shadow:
+      inset 3px 3px 7px rgb(var(--nm-dark) / calc(var(--nm-strength) * 0.95)),
+      inset -3px -3px 7px rgb(var(--nm-light) / calc(var(--nm-strength) * 0.45));
+  }
+
+  .nm-inset-deep {
+    background: rgb(var(--sunken));
+    box-shadow:
+      inset 5px 5px 12px rgb(var(--nm-dark) / var(--nm-strength)),
+      inset -4px -4px 10px rgb(var(--nm-light) / calc(var(--nm-strength) * 0.4));
+  }
+
+  /* Barely-there separation, for rows inside an already-raised card. */
+  .nm-flat {
+    background: rgb(var(--raised) / 0.5);
+    box-shadow: 0 1px 0 rgb(var(--nm-light) / 0.18), 0 -1px 0 rgb(var(--nm-dark) / 0.18);
+  }
+
+  /* ---- composed components ---- */
+
+  .card {
+    @apply nm-raised rounded-2xl;
+  }
+
+  .row {
+    @apply flex items-center justify-between gap-6 px-5 py-3.5;
+  }
+  .row + .row {
+    box-shadow: inset 0 1px 0 rgb(var(--nm-dark) / 0.35), inset 0 2px 0 rgb(var(--nm-light) / 0.14);
+  }
+
+  .label {
+    @apply text-[13px] font-medium text-ink;
+  }
+  .hint {
+    @apply text-2xs leading-relaxed text-muted;
+  }
+  .section-title {
+    @apply text-[11px] font-semibold uppercase tracking-[0.09em] text-faint;
+  }
+
+  .input {
+    @apply nm-inset w-full rounded-xl px-3.5 py-2.5 text-[13px] text-ink
+           placeholder:text-faint transition-shadow duration-200;
+    border: none;
+  }
+  .input:focus {
+    outline: none;
+    box-shadow:
+      inset 3px 3px 7px rgb(var(--nm-dark) / calc(var(--nm-strength) * 0.95)),
+      inset -3px -3px 7px rgb(var(--nm-light) / calc(var(--nm-strength) * 0.45)),
+      0 0 0 2px rgb(var(--accent) / 0.55);
+  }
+
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-xl px-4 py-2
+           text-[13px] font-medium transition-all duration-150 ease-swift
+           disabled:cursor-not-allowed disabled:opacity-45;
+    border: none;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    @apply text-white;
+    background: linear-gradient(145deg, rgb(var(--accent)), rgb(var(--accent) / 0.82));
+    box-shadow:
+      4px 4px 10px rgb(var(--nm-dark) / var(--nm-strength)),
+      -3px -3px 8px rgb(var(--nm-light) / calc(var(--nm-strength) * 0.4));
+  }
+  .btn-primary:not(:disabled):hover {
+    filter: brightness(1.07);
+  }
+  .btn-primary:not(:disabled):active {
+    box-shadow:
+      inset 3px 3px 7px rgb(0 0 0 / 0.32),
+      inset -2px -2px 6px rgb(255 255 255 / 0.14);
+  }
+
+  .btn-ghost {
+    @apply nm-raised-sm text-ink;
+  }
+  .btn-ghost:not(:disabled):hover {
+    color: rgb(var(--accent));
+  }
+  .btn-ghost:not(:disabled):active,
+  .btn-ghost[data-active="true"] {
+    @apply nm-inset;
+  }
+
+  .btn-quiet {
+    @apply bg-transparent text-muted;
+    box-shadow: none;
+  }
+  .btn-quiet:not(:disabled):hover {
+    @apply nm-raised-sm text-ink;
+  }
+
+  .btn-danger {
+    @apply nm-raised-sm text-danger;
+  }
+  .btn-danger:not(:disabled):hover {
+    background: rgb(var(--danger) / 0.12);
+  }
+
+  .chip {
+    @apply nm-inset inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-2xs font-medium;
+  }
+
+  .kbd {
+    @apply nm-raised-sm inline-flex min-w-[26px] items-center justify-center rounded-lg
+           px-2 py-1 font-mono text-2xs text-muted;
+  }
+
+  .well {
+    @apply nm-inset-deep rounded-2xl;
+  }
+
+  .skeleton {
+    @apply nm-inset animate-pulse rounded-lg;
+  }
+
+  .drag-region {
+    -webkit-app-region: drag;
+  }
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+[data-motion="reduced"] *,
+[data-motion="reduced"] *::before,
+[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}

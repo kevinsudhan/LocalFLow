@@ -1,0 +1,567 @@
+[
+  {
+    "id": "plain-statement",
+    "group": "normal",
+    "input": "the shipment has been delayed by two days",
+    "expected": "The shipment has been delayed by two days."
+  },
+  {
+    "id": "plain-question",
+    "group": "normal",
+    "input": "can you send this today",
+    "expected": "Can you send this today?"
+  },
+  {
+    "id": "greeting",
+    "group": "normal",
+    "input": "hello John how are you",
+    "must_contain": [
+      "Hello John"
+    ],
+    "must_match": [
+      "[?.]$"
+    ]
+  },
+  {
+    "id": "fillers-hesitation",
+    "group": "fillers",
+    "input": "uh can you send Rahul the quotation tomorrow",
+    "must_not_contain": [
+      "uh "
+    ],
+    "must_contain": [
+      "Rahul",
+      "quotation"
+    ]
+  },
+  {
+    "id": "fillers-discourse",
+    "group": "fillers",
+    "input": "so, you know, the container is, like, still at customs",
+    "must_not_contain": [
+      "you know"
+    ],
+    "must_contain": [
+      "container",
+      "customs"
+    ]
+  },
+  {
+    "id": "fillers-meaningful-actually",
+    "group": "fillers",
+    "input": "The actual figure was higher than the estimate.",
+    "must_contain": [
+      "actual figure"
+    ]
+  },
+  {
+    "id": "fillers-kind-of-noun",
+    "group": "fillers",
+    "input": "I need a kind of folder that seals properly.",
+    "must_contain": [
+      "kind of folder"
+    ]
+  },
+  {
+    "id": "correction-weekday",
+    "group": "correction",
+    "input": "I'll send it Monday... actually Tuesday.",
+    "must_contain": [
+      "Tuesday"
+    ],
+    "must_not_contain": [
+      "Monday",
+      "actually"
+    ]
+  },
+  {
+    "id": "correction-name",
+    "group": "correction",
+    "input": "Send it to Rahul... no, send it to Karthik.",
+    "must_contain": [
+      "Karthik"
+    ],
+    "must_not_contain": [
+      "Rahul"
+    ]
+  },
+  {
+    "id": "correction-time",
+    "group": "correction",
+    "input": "The meeting is at 4... wait, make that 4:30.",
+    "must_contain": [
+      "4:30"
+    ],
+    "must_not_contain": [
+      "wait",
+      "make that"
+    ]
+  },
+  {
+    "id": "correction-city",
+    "group": "correction",
+    "input": "The shipment goes to Chennai, actually Bangalore.",
+    "must_contain": [
+      "Bangalore"
+    ],
+    "must_not_contain": [
+      "Chennai"
+    ]
+  },
+  {
+    "id": "correction-amount",
+    "group": "correction",
+    "input": "The total is 500, I meant 5000.",
+    "must_contain": [
+      "5000"
+    ],
+    "must_not_contain": [
+      "I meant"
+    ]
+  },
+  {
+    "id": "correction-mid-sentence",
+    "group": "correction",
+    "input": "can you send Rahul the quotation tomorrow, actually no, Friday, and tell him customs has delayed the shipment",
+    "must_contain": [
+      "Friday",
+      "Rahul",
+      "customs"
+    ],
+    "must_not_contain": [
+      "tomorrow",
+      "actually"
+    ]
+  },
+  {
+    "id": "numbers-preserved",
+    "group": "numbers",
+    "input": "the invoice total is 4500 rupees due on the 15th of March",
+    "must_contain": [
+      "4500",
+      "15th",
+      "March"
+    ]
+  },
+  {
+    "id": "numbers-not-a-list",
+    "group": "numbers",
+    "input": "I need two boxes and three pallets for this order.",
+    "must_not_contain": [
+      "1."
+    ],
+    "must_contain": [
+      "two boxes",
+      "three pallets"
+    ]
+  },
+  {
+    "id": "list-explicit",
+    "group": "lists",
+    "input": "Things I need to do. One finish the CRM. Two fix Outlook. Three test ICEGATE.",
+    "must_match": [
+      "^Things I need to do:",
+      "\\n1\\. Finish the CRM",
+      "\\n2\\. Fix Outlook",
+      "\\n3\\. Test ICEGATE"
+    ]
+  },
+  {
+    "id": "list-inline",
+    "group": "lists",
+    "input": "One call the supplier two confirm the booking three send the invoice",
+    "must_match": [
+      "^1\\. ",
+      "\\n2\\. ",
+      "\\n3\\. "
+    ]
+  },
+  {
+    "id": "vocabulary-known-term",
+    "group": "vocabulary",
+    "input": "please check the ice gate filing for this shipment",
+    "must_contain": [
+      "ICEGATE"
+    ]
+  },
+  {
+    "id": "vocabulary-fuzzy",
+    "group": "vocabulary",
+    "input": "we run everything through Olama locally",
+    "must_contain": [
+      "Ollama"
+    ]
+  },
+  {
+    "id": "snippet-signature",
+    "group": "snippets",
+    "input": "insert my email signature",
+    "must_contain": [
+      "Best regards"
+    ]
+  },
+  {
+    "id": "command-undo",
+    "group": "commands",
+    "input": "undo that",
+    "expected": ""
+  },
+  {
+    "id": "command-not-triggered",
+    "group": "commands",
+    "input": "Can you undo that change in the spreadsheet please?",
+    "must_contain": [
+      "spreadsheet"
+    ]
+  },
+  {
+    "id": "terminal-verbatim",
+    "group": "developer",
+    "input": "git commit dash m fix the parser",
+    "context": {
+      "exe": "WindowsTerminal.exe"
+    },
+    "must_contain": [
+      "git commit"
+    ],
+    "must_not_contain": [
+      "?"
+    ]
+  },
+  {
+    "id": "developer-identifiers",
+    "group": "developer",
+    "input": "update the getShipmentStatus function in shipment_service.py",
+    "context": {
+      "exe": "code.exe"
+    },
+    "must_contain": [
+      "getShipmentStatus",
+      "shipment_service.py"
+    ]
+  },
+  {
+    "id": "developer-url",
+    "group": "developer",
+    "input": "the docs are at https://example.com/api/v2/shipments",
+    "context": {
+      "exe": "code.exe"
+    },
+    "must_contain": [
+      "https://example.com/api/v2/shipments"
+    ]
+  },
+  {
+    "id": "continuation-mid-sentence",
+    "group": "context",
+    "input": "the shipment has been delayed",
+    "context": {
+      "exe": "chrome.exe",
+      "window_title": "Inbox - Gmail",
+      "text_before": "Hi Rahul,\n\nI wanted to let you know that ",
+      "has_uia_text": true
+    },
+    "must_match": [
+      "^the shipment has been delayed"
+    ]
+  },
+  {
+    "id": "continuation-new-sentence",
+    "group": "context",
+    "input": "the shipment has been delayed",
+    "context": {
+      "exe": "notepad.exe",
+      "text_before": "Everything is on track. ",
+      "has_uia_text": true
+    },
+    "must_match": [
+      "^The shipment"
+    ]
+  },
+  {
+    "id": "context-no-hallucination",
+    "group": "context",
+    "input": "send it to doctor Agarwal",
+    "context": {
+      "exe": "notepad.exe",
+      "text_before": "Meeting with Dr. Agarwal\n",
+      "has_uia_text": true
+    },
+    "must_contain": [
+      "Agarwal"
+    ],
+    "must_not_contain": [
+      "meeting with"
+    ]
+  },
+  {
+    "id": "spoken-punctuation",
+    "group": "punctuation",
+    "input": "hello Rahul comma please confirm the booking period",
+    "must_contain": [
+      "Hello Rahul,"
+    ]
+  },
+  {
+    "id": "spoken-punct-not-a-command",
+    "group": "punctuation",
+    "input": "the comma is missing from that sentence",
+    "must_contain": [
+      "comma is missing"
+    ]
+  },
+  {
+    "id": "new-paragraph",
+    "group": "punctuation",
+    "input": "thanks for the update new paragraph I will confirm tomorrow",
+    "must_match": [
+      "\\n"
+    ]
+  },
+  {
+    "id": "email-style",
+    "group": "style",
+    "input": "hey can you push the delivery to next week we are short on stock",
+    "context": {
+      "exe": "outlook.exe"
+    },
+    "must_contain": [
+      "delivery"
+    ],
+    "style": "professional"
+  },
+  {
+    "id": "messaging-style",
+    "group": "style",
+    "input": "running five minutes late for the call",
+    "context": {
+      "exe": "slack.exe"
+    },
+    "must_contain": [
+      "five minutes late"
+    ]
+  },
+  {
+    "id": "multilingual-tamil",
+    "group": "multilingual",
+    "input": "Tomorrow shipment வந்து சேரும் so please inform the customer.",
+    "must_contain": [
+      "வந்து சேரும்",
+      "customer"
+    ]
+  },
+  {
+    "id": "hinglish",
+    "group": "multilingual",
+    "input": "kal shipment aa jayega so please tell the client",
+    "must_contain": [
+      "shipment",
+      "client"
+    ]
+  },
+  {
+    "id": "long-dictation",
+    "group": "long",
+    "input": "good morning everyone I wanted to give a quick update on the shipment status the container cleared customs yesterday evening and is now on its way to the warehouse we expect delivery by Thursday afternoon I will share the tracking details shortly",
+    "must_contain": [
+      "customs",
+      "warehouse",
+      "Thursday"
+    ],
+    "must_match": [
+      "\\."
+    ]
+  },
+  {
+    "id": "empty-input",
+    "group": "edge",
+    "input": "   ",
+    "expected": ""
+  },
+  {
+    "id": "single-word",
+    "group": "edge",
+    "input": "yes",
+    "must_contain": [
+      "Yes"
+    ]
+  },
+  {
+    "id": "no-invented-content",
+    "group": "safety",
+    "input": "tell Rahul the container is late",
+    "must_not_contain": [
+      "Dear",
+      "Best regards",
+      "Sincerely"
+    ]
+  },
+  {
+    "id": "question-stays-question",
+    "group": "safety",
+    "input": "can you send Rahul the report tomorrow",
+    "must_match": [
+      "\\?$"
+    ],
+    "must_not_contain": [
+      "Sure",
+      "I'll send",
+      "I will send"
+    ]
+  },
+  {
+    "id": "quote-explicit",
+    "group": "quotes",
+    "input": "quote I will send the documents by Friday end quote",
+    "must_contain": [
+      "I will send the documents by Friday"
+    ],
+    "must_not_contain": [
+      "end quote"
+    ],
+    "must_match": [
+      "^[“\"]"
+    ]
+  },
+  {
+    "id": "quote-noun-not-command",
+    "group": "quotes",
+    "input": "please send me the quote by Friday",
+    "must_contain": [
+      "quote by Friday"
+    ],
+    "must_not_contain": [
+      "“"
+    ]
+  },
+  {
+    "id": "list-ordinal",
+    "group": "lists",
+    "input": "I need three things first call John second email Sarah third submit the report",
+    "must_match": [
+      "^I need three things:",
+      "\n1\\. Call John",
+      "\n2\\. Email Sarah",
+      "\n3\\. Submit the report"
+    ]
+  },
+  {
+    "id": "list-ordinal-imperative",
+    "group": "lists",
+    "input": "first install Docker second clone the repo third run the application",
+    "must_match": [
+      "^1\\. Install Docker",
+      "\n2\\. Clone the repo",
+      "\n3\\. Run the application"
+    ]
+  },
+  {
+    "id": "list-bullet",
+    "group": "lists",
+    "input": "bullet call the supplier bullet confirm the booking bullet send the invoice",
+    "must_match": [
+      "^- Call the supplier",
+      "\n- Confirm the booking",
+      "\n- Send the invoice"
+    ]
+  },
+  {
+    "id": "ordinal-not-a-list",
+    "group": "lists",
+    "input": "The first item is broken and the second one is fine.",
+    "must_not_contain": [
+      "1. "
+    ],
+    "must_contain": [
+      "first item"
+    ]
+  },
+  {
+    "id": "email-shape",
+    "group": "email",
+    "input": "email Sarah saying hi Sarah just wanted to check if we are still on for tomorrow thanks Kevin",
+    "context": {
+      "exe": "outlook.exe"
+    },
+    "must_match": [
+      "^Hi Sarah,\n\n",
+      "Thanks,\nKevin$"
+    ],
+    "must_not_contain": [
+      "email Sarah saying"
+    ]
+  },
+  {
+    "id": "email-not-triggered",
+    "group": "email",
+    "input": "hi Sarah how are you doing today",
+    "must_not_contain": [
+      "\n\n"
+    ],
+    "must_contain": [
+      "Sarah"
+    ]
+  },
+  {
+    "id": "spoken-time",
+    "group": "numbers",
+    "input": "let us meet at six thirty tomorrow",
+    "must_contain": [
+      "6:30"
+    ],
+    "must_not_contain": [
+      "six thirty"
+    ]
+  },
+  {
+    "id": "spoken-time-not-a-quantity",
+    "group": "numbers",
+    "input": "I need six thirty litre drums",
+    "must_contain": [
+      "six thirty"
+    ],
+    "must_not_contain": [
+      "6:30"
+    ]
+  },
+  {
+    "id": "false-start-phrase",
+    "group": "fillers",
+    "input": "um um I mean let us let us do it tomorrow",
+    "must_contain": [
+      "do it tomorrow"
+    ],
+    "must_not_contain": [
+      "let us let us",
+      "um"
+    ]
+  },
+  {
+    "id": "repetition-preserved",
+    "group": "fillers",
+    "input": "that was very very good work",
+    "must_contain": [
+      "very very good"
+    ]
+  },
+  {
+    "id": "command-delete-that",
+    "group": "commands",
+    "input": "delete that",
+    "expected": ""
+  },
+  {
+    "id": "command-replace-that",
+    "group": "commands",
+    "input": "replace that with send it Friday",
+    "expected": ""
+  },
+  {
+    "id": "command-not-triggered-replace",
+    "group": "commands",
+    "input": "I will replace that with a new one when it arrives",
+    "must_contain": [
+      "replace that with a new one"
+    ]
+  }
+]

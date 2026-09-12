@@ -1,0 +1,4 @@
+# CUDA runtime libraries required by CTranslate2 for GPU inference.
+# CTranslate2 4.5 targets CUDA 12 + cuDNN 9.
+nvidia-cublas-cu12==12.4.5.8
+nvidia-cudnn-cu12==9.1.0.70
