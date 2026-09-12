@@ -178,6 +178,44 @@ will need an exception for `localflow.exe`.
 
 **LocalFlow is paused.** The tray icon shows it, and the sidebar toggle resumes.
 
+**Read the hook heartbeat.** Every twenty seconds the hook writes a line to
+`%APPDATA%\LocalFlow\logs\desktop.log` that says what it is actually seeing.
+Counts only, never keystrokes:
+
+```
+hook heartbeat: seen=773 injected=8 ctrl=99 matched=548 partial=13 rearms=32 lost_releases=0 enabled=true
+```
+
+| Field | Meaning |
+|---|---|
+| `seen` | Every key event the hook was handed. If this never rises, nothing is reaching LocalFlow at all and another application is claiming the keyboard. |
+| `matched` | Times the full chord fired. Auto-repeat counts here, so a single long hold produces many. |
+| `partial` | Times the dictation key arrived without its modifiers. A rising `partial` with a flat `matched` means the chord is wrong. |
+| `rearms` | Times the hook had to be reinstalled after going quiet. A steadily rising count on an idle machine is normal. |
+| `lost_releases` | Holds that ended without the hook ever being handed the release. |
+| `injected` | Events flagged as synthesised. LocalFlow ignores these so its own typing cannot feed itself. |
+
+---
+
+## Dictation keeps recording after I let go
+
+The release is the only thing that ends a dictation, and Windows will drop that
+event for reasons outside the application: it silently removes a low-level hook
+whose callback overran `LowLevelHooksTimeout`, an elevated foreground window can
+swallow it, and there is no notification in either case. The press is seen, the
+release is not, and the microphone stays open with the HUD saying it is
+listening.
+
+LocalFlow polls the live key state every 120 ms while it believes a key is held.
+The hardware state is not subject to any delivery path, so it is the authority:
+if the key is physically up, the dictation ends and the hook is replaced. A lost
+release costs about a tenth of a second rather than the whole session.
+
+If this happens to you, `lost_releases` in the heartbeat above will be non-zero
+and the log will carry a line naming the shortcut. Recovery is automatic, but a
+count that climbs steadily is worth reporting, and picking a shortcut without
+modifiers (`F9`) avoids the most common cause.
+
 ---
 
 ## Nothing is transcribed

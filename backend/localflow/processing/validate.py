@@ -75,6 +75,11 @@ def _spoken_numbers(text: str) -> set[str]:
     return {_NUMBER_WORDS[word] for word in words if word in _NUMBER_WORDS}
 
 
+def _spoken_number_words(text: str) -> list[str]:
+    """Number words actually written out in the text, in order."""
+    words = re.findall(r"[a-z]+", (text or "").lower())
+    return [word for word in words if word in _NUMBER_WORDS]
+
 def _missing(items: list[str], haystack: str) -> list[str]:
     lowered = haystack.lower()
     missing: list[str] = []
@@ -139,6 +144,27 @@ def validate_llm_output(
                 False, "dropped_numbers", "Too many numbers went missing."
             )
         warnings.append("dropped numbers: " + ", ".join(dropped_digits))
+
+    # A spelled-out number is still a number.
+    #
+    # "I have to buy five things, apple, water bottle, ..." contains no digits
+    # at all, so the comparison above had nothing to compare and passed. A
+    # rewrite that returned only the bullet list - deleting the announcement
+    # and the count with it - was therefore accepted. A quantity the speaker
+    # said has to survive as the word or as the digit.
+    dropped_words = [
+        word
+        for word in _spoken_number_words(source)
+        if word not in text.lower() and _NUMBER_WORDS[word] not in output_digits
+    ]
+    if dropped_words:
+        if not tolerant:
+            return ValidationResult(
+                False,
+                "dropped_numbers",
+                "Quantities went missing: " + ", ".join(dict.fromkeys(dropped_words))[:80],
+            )
+        warnings.append("dropped quantities: " + ", ".join(dict.fromkeys(dropped_words)))
     invented = _multiset_difference(output_digits, source_digits)
     if invented:
         # "five minutes" -> "5 minutes" is formatting, not invention, and so is

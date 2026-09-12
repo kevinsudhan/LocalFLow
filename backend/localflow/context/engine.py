@@ -119,9 +119,20 @@ def analyse_continuation(text_before: str, has_uia_text: bool) -> str:
         return "new_sentence"
     if tail.endswith((",", ";", ":", "-", "—", "(", "\"", "'")):
         return "mid_sentence"
+    # An unfinished sentence has to look like one.
+    #
+    # Treating any trailing letter as mid-sentence made that the default for
+    # almost every field, and a chat composer that reports surrounding page
+    # text through UI Automation then lowercased the first word of every
+    # dictation: "What is the time" arrived as "what is the time". The two
+    # mistakes are not symmetric - wrongly lowercasing a sentence opening is
+    # visible every time, wrongly capitalising a continuation costs one
+    # letter - so the tie now breaks towards a new sentence, which is what
+    # the no-UIA branch above already assumes.
     if tail and tail[-1].isalnum():
-        return "mid_sentence"
-    return "mid_sentence"
+        fragment = _SENTENCE_END.split(tail)[-1].strip()
+        return "mid_sentence" if len(fragment.split()) >= 2 else "new_sentence"
+    return "new_sentence"
 
 
 def extract_proper_nouns(*texts: str, limit: int = 24) -> list[str]:

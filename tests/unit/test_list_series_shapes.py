@@ -199,3 +199,33 @@ def test_a_bare_comma_can_separate_announcement_from_series() -> None:
 )
 def test_the_comma_path_demands_corroboration(text: str) -> None:
     assert detect_list(text) == text, "prose was turned into a list"
+
+
+@pytest.mark.parametrize(
+    "spoken,expected",
+    [
+        (
+            "I need to buy things such as crayons, onions, tomatoes and curd packet.",
+            ["Crayons", "Onions", "Tomatoes", "Curd packet"],
+        ),
+        (
+            "Bring a few items including a pen, a ruler and some paper.",
+            ["A pen", "A ruler", "Some paper"],
+        ),
+    ],
+)
+def test_examples_connector_with_enumeration_intent(spoken: str, expected: list[str]) -> None:
+    """'such as' counts only when the speaker is listing things to act on."""
+    assert bullets(spoken) == expected
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # "such as" introduces examples; this is a sentence, not four bullets.
+        "I like things such as walking, reading and coffee.",
+        "We discussed things such as budget, timelines and staffing.",
+    ],
+)
+def test_examples_connector_without_intent_stays_prose(text: str) -> None:
+    assert detect_list(text) == text, "prose was turned into a list"

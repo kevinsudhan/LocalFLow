@@ -186,6 +186,7 @@ struct HookState {
     cancel_vk: u16,
     enabled: bool,
     primary_down: bool,
+
     /// True while a dictation is in flight, so Escape is only swallowed then.
     session_active: bool,
     sender: Option<Sender<HotkeyEvent>>,
@@ -213,8 +214,27 @@ static STATE: Lazy<Mutex<HookState>> = Lazy::new(|| Mutex::new(HookState::new())
 // its modifiers. That is the difference between "Windows is not giving us the
 // key at all" and "the chord is wrong", which is otherwise unanswerable.
 static HOOK_INSTALLED: AtomicBool = AtomicBool::new(false);
+/// Every event the hook is handed, counted so the re-arm timer can tell a
+/// quiet keyboard from a dead hook. A count, never content.
+static SEEN_EVENTS: AtomicU32 = AtomicU32::new(0);
+static REARMS: AtomicU32 = AtomicU32::new(0);
+/// Ctrl key events the hook was handed, and events flagged as synthesised.
+/// Both are counts; neither records what was typed.
+static CTRL_EVENTS: AtomicU32 = AtomicU32::new(0);
+static INJECTED_EVENTS: AtomicU32 = AtomicU32::new(0);
+
+const REARM_TIMER_ID: usize = 1;
+const REARM_INTERVAL_MS: u32 = 20_000;
+/// How often to check that a key the hook still believes is held is in fact
+/// still held. Short enough that a lost release costs a moment rather than a
+/// whole session, long enough to stay free: one atomic read, and a single
+/// `GetAsyncKeyState` only while a key is actually down.
+const HOLD_TIMER_ID: usize = 2;
+const HOLD_INTERVAL_MS: u32 = 120;
 static MATCHES: AtomicU32 = AtomicU32::new(0);
 static KEY_WITHOUT_CHORD: AtomicU32 = AtomicU32::new(0);
+/// Releases the hook never delivered, recovered by the watchdog below.
+static LOST_RELEASES: AtomicU32 = AtomicU32::new(0);
 
 /// What the keyboard hook currently believes, for the shortcut tester.
 #[derive(Debug, Clone, Serialize)]
@@ -226,6 +246,16 @@ pub struct HotkeyProbe {
     pub matches: u32,
     /// Times the dictation key arrived without the modifiers it needs.
     pub key_without_chord: u32,
+    /// Every key event the hook has been handed. Alive-or-dead evidence.
+    pub seen_events: u32,
+    /// Times the hook had to be put back after going quiet.
+    pub rearms: u32,
+    /// Ctrl key events the hook has been handed.
+    pub ctrl_events: u32,
+    /// Events arriving flagged as synthesised rather than typed.
+    pub injected_events: u32,
+    /// Key releases the hook never delivered, recovered from the live key state.
+    pub lost_releases: u32,
 }
 
 pub struct HotkeyManager {
@@ -268,6 +298,11 @@ impl HotkeyManager {
             primary: state.primary.map(|s| s.describe()).unwrap_or_default(),
             matches: MATCHES.load(Ordering::Relaxed),
             key_without_chord: KEY_WITHOUT_CHORD.load(Ordering::Relaxed),
+            seen_events: SEEN_EVENTS.load(Ordering::Relaxed),
+            rearms: REARMS.load(Ordering::Relaxed),
+            ctrl_events: CTRL_EVENTS.load(Ordering::Relaxed),
+            injected_events: INJECTED_EVENTS.load(Ordering::Relaxed),
+            lost_releases: LOST_RELEASES.load(Ordering::Relaxed),
         }
     }
 
@@ -284,6 +319,14 @@ impl HotkeyManager {
     }
 
     /// Install the hook on its own thread. Returns once the hook is live.
+    ///
+    /// The hook is also re-armed periodically. Windows silently removes a
+    /// low-level keyboard hook whose callback exceeds `LowLevelHooksTimeout`
+    /// (300 ms by default), which a machine under load can cause at any time.
+    /// There is no notification and no API that reports whether a hook is still
+    /// installed, so the handle stays valid-looking and the shortcut simply
+    /// stops working with nothing logged anywhere. Putting the hook back costs
+    /// microseconds, so the only sane remedy is to do it on a timer.
     #[cfg(windows)]
     pub fn start(&self, sender: Sender<HotkeyEvent>) -> Result<(), String> {
         STATE.lock().sender = Some(sender);
@@ -293,7 +336,7 @@ impl HotkeyManager {
             .name("localflow-hotkeys".into())
             .spawn(move || unsafe {
                 let hook = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_proc), None, 0);
-                let hook = match hook {
+                let mut hook = match hook {
                     Ok(handle) => handle,
                     Err(err) => {
                         let _ = ready_tx.send(Err(format!(
@@ -306,12 +349,62 @@ impl HotkeyManager {
                 HOOK_INSTALLED.store(true, Ordering::Relaxed);
                 let _ = ready_tx.send(Ok(GetCurrentThreadId()));
 
+                // A null window handle posts WM_TIMER to this thread's queue.
+                // With no window to own them the requested ids are ignored and
+                // Windows allocates its own, so keep what it returns: the two
+                // timers are told apart by the id in wParam.
+                let rearm_timer = SetTimer(None, REARM_TIMER_ID, REARM_INTERVAL_MS, None);
+                let hold_timer = SetTimer(None, HOLD_TIMER_ID, HOLD_INTERVAL_MS, None);
+                let mut last_seen = SEEN_EVENTS.load(Ordering::Relaxed);
+
                 let mut message = MSG::default();
                 while GetMessageW(&mut message, None, 0, 0).as_bool() {
+                    if message.message == WM_TIMER && message.wParam.0 == hold_timer {
+                        // A held key whose release never arrived. Recovering it
+                        // also means the hook is suspect, so put a fresh one in
+                        // rather than waiting out the re-arm interval.
+                        if recover_lost_release() && !rearm(&mut hook) {
+                            break;
+                        }
+                        continue;
+                    }
+                    if message.message == WM_TIMER && message.wParam.0 == rearm_timer {
+                        let seen = SEEN_EVENTS.load(Ordering::Relaxed);
+                        // A heartbeat in the log, because the counters are
+                        // otherwise only visible on one onboarding screen -
+                        // which is no use when the question is what the hook
+                        // is doing on a different screen entirely. Counts
+                        // only; nothing about which keys were pressed.
+                        log::info!(
+                            "hook heartbeat: seen={} injected={} ctrl={} matched={} partial={} rearms={} lost_releases={} enabled={}",
+                            seen,
+                            INJECTED_EVENTS.load(Ordering::Relaxed),
+                            CTRL_EVENTS.load(Ordering::Relaxed),
+                            MATCHES.load(Ordering::Relaxed),
+                            KEY_WITHOUT_CHORD.load(Ordering::Relaxed),
+                            REARMS.load(Ordering::Relaxed),
+                            LOST_RELEASES.load(Ordering::Relaxed),
+                            STATE.lock().enabled,
+                        );
+                        // Only re-arm when the hook has gone quiet. If keys are
+                        // still arriving it is demonstrably alive, and swapping
+                        // it out mid-stream would be pure risk. Never re-arm
+                        // while the dictation key is held, or the release would
+                        // be delivered to a hook that no longer exists - the
+                        // watchdog above is what closes that case out.
+                        if seen == last_seen && !STATE.lock().primary_down && !rearm(&mut hook) {
+                            break;
+                        }
+                        last_seen = seen;
+                        continue;
+                    }
                     let _ = TranslateMessage(&message);
                     DispatchMessageW(&message);
                 }
+                KillTimer(None, hold_timer).ok();
+                KillTimer(None, rearm_timer).ok();
                 let _ = UnhookWindowsHookEx(hook);
+                HOOK_INSTALLED.store(false, Ordering::Relaxed);
             })
             .map_err(|e| format!("could not start the hotkey thread: {e}"))?;
 
@@ -346,6 +439,81 @@ impl HotkeyManager {
     pub fn stop(&self) {}
 }
 
+/// Whether a hold has to be force-ended: the hook still believes the key is
+/// down while the hardware says it is not.
+///
+/// Trivial on its face, and separate because inverting it would be silent and
+/// catastrophic in one direction - every dictation ending the instant it
+/// started - and merely useless in the other.
+fn release_was_lost(hook_thinks_down: bool, key_physically_down: bool) -> bool {
+    hook_thinks_down && !key_physically_down
+}
+
+#[cfg(windows)]
+/// Take the hook out and put a fresh one in. `false` means it could not be
+/// replaced, which leaves the process with no hook at all and is fatal to
+/// push-to-talk, so the caller stops the thread.
+unsafe fn rearm(hook: &mut HHOOK) -> bool {
+    if UnhookWindowsHookEx(*hook).is_err() {
+        // Already gone - most likely Windows removed it - so there is nothing
+        // to take out and the replacement below is exactly what is needed.
+    }
+    match SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_proc), None, 0) {
+        Ok(fresh) => {
+            *hook = fresh;
+            REARMS.fetch_add(1, Ordering::Relaxed);
+            true
+        }
+        Err(err) => {
+            HOOK_INSTALLED.store(false, Ordering::Relaxed);
+            log::error!("could not re-arm the keyboard hook: {err}");
+            false
+        }
+    }
+}
+
+/// End a hold whose release the hook never delivered.
+///
+/// The release is the only thing that stops a dictation, and it exists in
+/// exactly one place: an event the hook is handed. Windows will drop that event
+/// for reasons entirely outside this process. It silently removes a low-level
+/// hook whose callback overran `LowLevelHooksTimeout`, and it does so without
+/// notifying anyone, so the press is seen, the hook dies during the hold, and
+/// the matching release is delivered to nothing. A higher-integrity foreground
+/// window can swallow it. So can the session's own re-arm, which is why that
+/// is skipped while a key is down.
+///
+/// Whatever the cause, the failure is the same and it is the worst one the app
+/// has: the microphone stays open, the HUD sits on screen saying it is
+/// listening, and nothing the user does with the keyboard ends it, because the
+/// only path out is the event that was lost. It stayed open for seventy seconds
+/// on a real machine.
+///
+/// The live key state is not subject to any of that - it is what the hardware
+/// says right now, not an event that has to survive a delivery path - so it is
+/// the authority on whether a key is still held. Returns whether a release had
+/// to be recovered.
+#[cfg(windows)]
+unsafe fn recover_lost_release() -> bool {
+    let mut state = STATE.lock();
+    let Some(spec) = state.primary else {
+        return false;
+    };
+    if !release_was_lost(state.primary_down, modifier_down(VIRTUAL_KEY(spec.vk))) {
+        return false;
+    }
+    state.primary_down = false;
+    LOST_RELEASES.fetch_add(1, Ordering::Relaxed);
+    log::warn!(
+        "{} was released without the hook seeing it; ending the dictation",
+        spec.describe()
+    );
+    if let Some(sender) = state.sender.as_ref() {
+        let _ = sender.send(HotkeyEvent::Up);
+    }
+    true
+}
+
 #[cfg(windows)]
 unsafe fn modifier_down(vk: VIRTUAL_KEY) -> bool {
     (GetAsyncKeyState(vk.0 as i32) as u16 & 0x8000) != 0
@@ -356,6 +524,16 @@ unsafe fn chord_satisfied(spec: &HotkeySpec) -> bool {
     if spec.key_is_modifier() {
         return true;
     }
+    // Ask the OS for the live modifier state rather than accumulating it
+    // from the hook's own events.
+    //
+    // Tracking looked better on paper - the modifier and the key it
+    // qualifies then come from one stream - but the hook discards events
+    // Windows flags as synthesised, so a release that arrives that way is
+    // never seen and the tracked bit latches on forever. Every subsequent
+    // press then fails the exact-match test, including shortcuts with no
+    // modifiers at all: F9 was rejected 29 times running. A stale bit is a
+    // worse failure than an occasional misread, because it never recovers.
     let ctrl = modifier_down(VK_CONTROL);
     let shift = modifier_down(VK_SHIFT);
     let alt = modifier_down(VK_MENU);
@@ -371,16 +549,26 @@ unsafe extern "system" fn keyboard_proc(code: i32, wparam: WPARAM, lparam: LPARA
         return CallNextHookEx(None, code, wparam, lparam);
     }
 
+    SEEN_EVENTS.fetch_add(1, Ordering::Relaxed);
     let info = &*(lparam.0 as *const KBDLLHOOKSTRUCT);
-    // Ignore anything we (or another automation tool) synthesised.
-    if info.flags.0 & LLKHF_INJECTED.0 != 0 {
-        return CallNextHookEx(None, code, wparam, lparam);
-    }
 
     let vk = info.vkCode as u16;
     let message = wparam.0 as u32;
     let is_down = message == WM_KEYDOWN || message == WM_SYSKEYDOWN;
     let is_up = message == WM_KEYUP || message == WM_SYSKEYUP;
+    let injected = info.flags.0 & LLKHF_INJECTED.0 != 0;
+    if injected {
+        INJECTED_EVENTS.fetch_add(1, Ordering::Relaxed);
+    }
+    if matches!(vk, 0x11 | 0xA2 | 0xA3) {
+        CTRL_EVENTS.fetch_add(1, Ordering::Relaxed);
+    }
+
+    // Anything synthesised is counted and then ignored, so LocalFlow's own
+    // SendInput can never feed itself.
+    if injected {
+        return CallNextHookEx(None, code, wparam, lparam);
+    }
 
     let mut swallow = false;
     let mut event: Option<HotkeyEvent> = None;
@@ -458,6 +646,18 @@ mod tests {
         assert!(HotkeySpec::parse("Ctrl").is_none());
         assert!(HotkeySpec::parse("").is_none());
         assert!(HotkeySpec::parse("Ctrl+NotAKey").is_none());
+    }
+
+    #[test]
+    fn a_lost_release_is_only_recovered_when_the_key_is_really_up() {
+        // The case this exists for: held, then released without the hook ever
+        // being handed the release.
+        assert!(release_was_lost(true, false));
+        // Genuinely still held. Ending here would cut every dictation short.
+        assert!(!release_was_lost(true, true));
+        // Nothing in flight.
+        assert!(!release_was_lost(false, false));
+        assert!(!release_was_lost(false, true));
     }
 
     #[test]

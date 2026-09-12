@@ -126,7 +126,16 @@ _SERIES_OPENER = re.compile(
 # is trimmed separately, below.
 _SERIES_CONNECTOR = re.compile(
     r",?\s+(?:and\s+they\s+are|and\s+those\s+are|and\s+these\s+are"
-    r"|namely|as\s+follows|are|is|were|was)\s*[:,]?\s+",
+    r"|namely|as\s+follows|such\s+as|including|are|is|were|was)\s*[:,]?\s+",
+    re.IGNORECASE,
+)
+# Connectors that introduce examples rather than a closed set.
+_WEAK_CONNECTORS = {"such as", "including"}
+# Verbs that say the speaker is enumerating things to act on, rather than
+# illustrating a point.
+_ENUMERATION_INTENT = re.compile(
+    r"(?<![\w])(?:buy|get|purchase|order|bring|fetch|collect|grab|pack"
+    r"|prepare|pick\s+up|write\s+down|add)(?![\w])",
     re.IGNORECASE,
 )
 # Left behind when the copula is split off "... which are X, Y and Z".
@@ -219,6 +228,16 @@ def _list_from_series(text: str) -> str | None:
         opener, lead_sentences = sentences[-2], sentences[:-2]
     elif _announces_a_list(last) and _SERIES_CONNECTOR.search(last):
         # One sentence, no colon: "five things which are A, B and C".
+        match = _SERIES_CONNECTOR.search(last)
+        connector = match.group(0).strip().strip(",:").lower()
+        # "such as" and "including" introduce *examples*, which is ordinary
+        # prose far more often than it is a list: "I like things such as
+        # walking, reading and coffee" is a sentence, not four bullets. They
+        # only count when the announcement says the speaker intends to
+        # enumerate - "I need to buy things such as ..." - where the verb,
+        # not the connector, is what carries the intent.
+        if connector in _WEAK_CONNECTORS and not _ENUMERATION_INTENT.search(last):
+            return None
         announcement, series = _SERIES_CONNECTOR.split(last, maxsplit=1)[:2]
         announcement = _DANGLING_PRONOUN.sub("", announcement)
         items = _series_items(series)

@@ -47,9 +47,14 @@ tone is measured against the card it sits on and clears WCAG AA in both themes.
 ## First run
 
 Setup checks each thing it needs, in the order it needs them, and tells you what
-it found rather than assuming.
+it found rather than assuming. Six steps: welcome, microphone, speech model, AI
+cleanup, shortcut, ready. It can be re-run at any time from
+`Settings > General > Show the welcome tour again`.
 
 ![The welcome step](images/onboarding-welcome.png)
+
+The progress rail across the top fills one segment per step, so the length of
+the thing you have agreed to is visible from the first screen.
 
 ### Microphone
 
@@ -70,8 +75,9 @@ Three things on this screen are worth knowing about:
   configured. Those differ more often than you would expect, because a device
   that fails to open falls back to another one.
 - If the open device delivers nothing but digital silence for a few seconds, the
-  screen says so explicitly instead of leaving a meter at zero with no
-  explanation. The screenshot above shows that state.
+  screen says so explicitly, and names the likely causes, instead of leaving a
+  meter at zero with no explanation. A meter that sits at zero is the single
+  most common way a dictation app fails silently.
 
 ### Speech model
 
@@ -86,37 +92,50 @@ the model is loaded. If a model fails to load, the error appears here.
 See [MODEL_SETUP.md](MODEL_SETUP.md) for the measurements behind the
 recommendation.
 
+### AI cleanup
+
+![Choosing the cleanup model](images/onboarding-cleanup.png)
+
+Optional, and labelled as such. The local language model fixes grammar and
+resolves spoken corrections, but it is the slowest thing in the pipeline and it
+runs on a minority of dictations, so setting it up is a choice rather than a
+requirement. Skipping it leaves the deterministic pipeline doing all the work,
+which is a complete product on its own.
+
 ### Shortcut
 
 ![The shortcut tester](images/onboarding-shortcut.png)
 
 The shortcut is a system-wide low-level keyboard hook, which means it is
 invisible: if it does not fire, nothing happens anywhere and there is no error
-to read. This screen makes it visible.
+to read. This screen makes it visible, and it answers exactly one question.
 
-Hold the combination and the keycaps press into the surface, an accent glow
-blooms behind them and a counter shows how long you have held it. Release and it
-reports the duration.
+Hold the combination. The keycaps press into the surface, an accent glow blooms
+behind them, and a counter runs while you hold. Release and it says `Shortcut
+verified`. That is the whole screen.
 
-If nothing arrives, it stops guessing and asks the hook what it is seeing. The
-diagnostic line under the status reports, in order: whether the hook is
-installed, whether it is enabled, the chord it is watching for, how many times
-that chord matched, how many times the key arrived without its modifiers, and
-whether the window itself saw the keystroke. Those six facts separate the three
-distinct failures that all look identical from the outside:
+It used to report counters and a taxonomy of failure modes here, which was the
+wrong thing at the wrong moment: somebody on step five of setup wants to know
+whether the key works, not to be handed a diagnostic table. The counters still
+exist, and are more useful where they now live. The hook writes a heartbeat to
+`%APPDATA%\LocalFlow\logs\desktop.log` every twenty seconds, recording how many
+events it was handed, how many matched the chord, how many times the key arrived
+without its modifiers, how many times the hook had to be re-armed, and how many
+releases were lost and recovered. That covers the whole session rather than one
+screen. See the shortcut section of [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for
+how to read it.
 
-| Reading | Meaning |
-|---|---|
-| `0 matched`, `0 partial`, `window saw nothing` | Nothing reaches LocalFlow at all. Another application is claiming the combination. |
-| `0 matched`, `window saw it` | Keys reach the process but not the hook. Windows has stopped feeding it; restarting reinstalls it. |
-| `0 matched`, `N partial` | The key arrives without its modifiers. The chord is wrong. |
+The three suggestions under the tester (`Ctrl+Space`, `Alt+D`, `F9`) are there
+because the most common cause of a dead shortcut is another application claiming
+the same combination, and the fastest fix is a different one.
 
-### Try it
+### Ready
 
-![The practice step](images/onboarding-try.png)
+![The final step](images/onboarding-done.png)
 
-A text box and the same read-aloud prompt. This is the first place the whole
-round trip is exercised: hold, speak, release, and watch text arrive.
+A tick draws itself, the shortcut is repeated once more, and three things worth
+knowing about are listed without ceremony: vocabulary, snippets, and saying
+`undo that`. Setup ends here.
 
 ---
 

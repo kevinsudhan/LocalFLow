@@ -47,8 +47,8 @@ to read, and says so plainly when a device is delivering silence:
 ![The microphone check](docs/images/onboarding-microphone.png)
 
 The shortcut is a system-wide keyboard hook, so when it fails there is
-nothing to see anywhere. This screen makes it visible, and if no key arrives
-it reports what the hook is actually observing:
+nothing to see anywhere. This screen makes it visible: hold the combination
+and it tells you whether the hook received it.
 
 ![The shortcut tester](docs/images/onboarding-shortcut.png)
 
@@ -56,9 +56,12 @@ A full tour of every screen is in [INTERFACE.md](docs/INTERFACE.md).
 
 ---
 Measured on the reference machine (RTX 3060 Laptop, 6 GB): **100 % zero-edit
-rate** across 40 processing cases, median **0.9 ms** for the deterministic path
-and ~**700 ms** end-to-end for a spoken sentence. See
-[TESTING.md](docs/TESTING.md) for the methodology and the caveats.
+rate** across 55 processing cases, median **0.8 ms** for the deterministic path
+and **1.6 s** end to end for four seconds of speech. The local language model
+runs on **3.6 %** of dictations; the rest never leave the deterministic path.
+See [PERFORMANCE.md](docs/PERFORMANCE.md) for the stage breakdown and what each
+optimisation actually bought, and [TESTING.md](docs/TESTING.md) for the
+methodology and the caveats.
 
 ---
 
@@ -195,6 +198,7 @@ Full detail in [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the pieces fit and why |
 | [DEVELOPMENT.md](docs/DEVELOPMENT.md) | Working on the code |
 | [MODEL_SETUP.md](docs/MODEL_SETUP.md) | Choosing, downloading and sizing models |
+| [PERFORMANCE.md](docs/PERFORMANCE.md) | Where the time goes, and every optimisation measured |
 | [PRIVACY.md](docs/PRIVACY.md) | Exactly what is stored and what touches the network |
 | [TESTING.md](docs/TESTING.md) | The test suite and the quality benchmark |
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | When something does not work |

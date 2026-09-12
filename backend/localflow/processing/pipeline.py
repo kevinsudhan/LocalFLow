@@ -39,6 +39,11 @@ from .validate import ValidationResult, sanity_check_final, validate_llm_output
 log = logging.getLogger(__name__)
 
 MIN_WORDS_FOR_LLM = 3
+# Styles that genuinely rewrite prose, as opposed to describing the register
+# dictated speech already has.
+REWRITING_STYLES = {style_module.PROFESSIONAL, style_module.CONCISE}
+# Below this there is nothing for a rewriting style to do.
+STYLE_MIN_WORDS = 12
 RUN_ON_WORDS = 32
 
 
@@ -291,6 +296,13 @@ class ProcessingPipeline:
         words = word_count(text)
         if words < MIN_WORDS_FOR_LLM:
             return False, "too_short"
+        if _has_list_structure(text):
+            # The deterministic pass already produced a list, which is a
+            # stronger result than prose and a fragile one to hand over. On a
+            # measured dictation the model returned only the bullets and
+            # deleted the announcement that introduced them, spoken number and
+            # all - and the validator accepted it.
+            return False, "already_structured"
         if self.llm_settings.always_use:
             return True, "always_on"
 
@@ -306,7 +318,23 @@ class ProcessingPipeline:
 
         style = style_module.get(data.style_override or data.context.style)
         if style.key != style_module.NEUTRAL:
-            return True, "style_" + style.key
+            # A style is not by itself a reason to spend two to eight seconds.
+            #
+            # Applications carry a default style - chat is 'concise', messaging
+            # is 'casual' - so this single condition was escalating *every*
+            # dictation in those apps. Measured over 19 real dictations it put
+            # the model on 74% of them against a design target of about 13%,
+            # and three of those rewrites were then rejected by the validator,
+            # costing seconds and producing nothing.
+            #
+            # Asking for a style explicitly always escalates. An application
+            # default only does so when the style actually rewrites prose and
+            # there is enough text for that to mean anything: 'casual' and
+            # 'developer' mostly describe what dictated speech already is.
+            if data.style_override:
+                return True, "style_" + style.key
+            if style.key in REWRITING_STYLES and words >= STYLE_MIN_WORDS:
+                return True, "style_" + style.key
 
         if data.avg_logprob and data.avg_logprob < -0.75:
             return True, "low_asr_confidence"
@@ -451,3 +479,10 @@ _RESTART = re.compile(
 def _has_disfluent_restart(text: str) -> bool:
     """False starts such as 'I was - I mean we were', or 'the the' survivors."""
     return bool(_RESTART.search(text))
+
+
+def _has_list_structure(text: str) -> bool:
+    """Whether the deterministic pass already produced a list."""
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    marked = sum(1 for line in lines if re.match(r"^(?:[-*•]\s|\d{1,2}[.)]\s)", line))
+    return marked >= 2

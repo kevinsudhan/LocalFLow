@@ -2,14 +2,88 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Fragment, useEffect, useRef, useState } from "react";
 
 import { Button, Meter, Select, Spinner, StatusDot } from "../components/ui";
-import { Icon } from "../components/ui/Icon";
-import { api, BridgeError, on, onBackend, type HotkeyProbe } from "../services/bridge";
+import { Icon, type IconName } from "../components/ui/Icon";
+import { api, BridgeError, on, onBackend } from "../services/bridge";
 import { useAppStore } from "../stores/appStore";
 
-type StepId = "welcome" | "microphone" | "hardware" | "ai" | "shortcut" | "try" | "done";
+type StepId = "welcome" | "microphone" | "hardware" | "ai" | "shortcut" | "done";
 
-const STEPS: StepId[] = ["welcome", "microphone", "hardware", "ai", "shortcut", "try", "done"];
+const STEPS: StepId[] = ["welcome", "microphone", "hardware", "ai", "shortcut", "done"];
 const EASE = [0.22, 0.61, 0.36, 1] as const;
+
+/** What each step is, for the progress rail and the step chip. */
+const STEP_META: Record<StepId, { label: string; icon: IconName }> = {
+  welcome: { label: "Welcome", icon: "sparkle" },
+  microphone: { label: "Microphone", icon: "mic" },
+  hardware: { label: "Speech model", icon: "chip" },
+  ai: { label: "AI cleanup", icon: "sparkle" },
+  shortcut: { label: "Shortcut", icon: "keyboard" },
+  done: { label: "Ready", icon: "check" },
+};
+
+/** Steps that carry their own hero layout and do not want a chip above it. */
+const HERO_STEPS = new Set<StepId>(["welcome", "done"]);
+
+/**
+ * The field behind the setup card.
+ *
+ * Deliberately not coloured blobs. Large soft gradients are the default choice
+ * here and they read as cheap for two concrete reasons: an 8-bit gradient over
+ * that many pixels bands visibly, and the shape carries no meaning, so it is
+ * decoration that has to be looked past rather than through.
+ *
+ * Instead: a precise dot lattice, masked away from the centre so it never
+ * competes with the content, a fine grain that kills banding and gives the flat
+ * surface some tooth, and a vignette to seat the card. It is built from the
+ * theme's own ink and shadow tokens, so it costs nothing in either theme and
+ * changes with them.
+ */
+function Backdrop() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      {/* Measured lattice. Reads as precision instrumentation rather than mood. */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 1px 1px, rgb(var(--ink) / 0.13) 1px, transparent 0)",
+          backgroundSize: "26px 26px",
+          maskImage:
+            "radial-gradient(ellipse 58% 54% at 50% 46%, transparent 34%, black 88%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse 58% 54% at 50% 46%, transparent 34%, black 88%)",
+        }}
+      />
+      {/* A single hairline through the centre of the lattice, on the card's axis. */}
+      <div
+        className="absolute inset-x-0 top-1/2 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgb(var(--accent) / 0.16), transparent)",
+        }}
+      />
+      {/* Grain. Three per cent of an overlay is invisible as texture and does
+          all the work of stopping the flat fill looking like flat fill. */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          opacity: 0.035,
+          mixBlendMode: "overlay",
+        }}
+      />
+      {/* Seats the card in the middle of the field. */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 66% 58% at 50% 46%, transparent 38%, rgb(var(--nm-dark) / 0.34))",
+        }}
+      />
+    </div>
+  );
+}
 
 /**
  * First-run setup.
@@ -21,6 +95,7 @@ const EASE = [0.22, 0.61, 0.36, 1] as const;
 export function Onboarding({ onDone }: { onDone(): void }) {
   const [index, setIndex] = useState(0);
   const step = STEPS[index];
+  const meta = STEP_META[step];
   const next = () => setIndex((i) => Math.min(i + 1, STEPS.length - 1));
   const back = () => setIndex((i) => Math.max(i - 1, 0));
 
@@ -31,21 +106,68 @@ export function Onboarding({ onDone }: { onDone(): void }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <div className="flex w-full max-w-[620px] flex-col" style={{ minHeight: 470 }}>
-        <div className="mb-6 flex items-center gap-1.5" role="progressbar" aria-valuenow={index + 1} aria-valuemax={STEPS.length}>
+      <Backdrop />
+
+      <motion.div
+        className="relative flex w-full max-w-[640px] flex-col"
+        style={{ minHeight: 470 }}
+        initial={{ opacity: 0, y: 14, scale: 0.985 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.42, ease: EASE }}
+      >
+        <div
+          className="mb-2.5 flex items-center gap-1.5"
+          role="progressbar"
+          aria-valuenow={index + 1}
+          aria-valuemax={STEPS.length}
+        >
           {STEPS.map((id, i) => (
-            <div
-              key={id}
-              className="h-1 flex-1 rounded-full transition-colors duration-300"
-              style={{
-                background:
-                  i <= index ? "rgb(var(--accent))" : "rgb(var(--line))",
-              }}
-            />
+            <div key={id} className="relative h-1 flex-1 overflow-hidden rounded-full bg-line">
+              <motion.div
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: "rgb(var(--accent))",
+                  // The step you are on glows; the ones behind it are just filled.
+                  boxShadow: i === index ? "0 0 10px rgb(var(--accent) / 0.7)" : "none",
+                  transformOrigin: "left",
+                }}
+                initial={false}
+                animate={{ scaleX: i <= index ? 1 : 0 }}
+                transition={{ duration: 0.34, ease: EASE }}
+              />
+            </div>
           ))}
         </div>
 
-        <div className="nm-raised flex flex-1 flex-col rounded-2xl p-8">
+        <div className="mb-5 flex items-baseline justify-between">
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={step}
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.18, ease: EASE }}
+              className="text-2xs font-medium uppercase tracking-[0.12em] text-accent"
+            >
+              {meta.label}
+            </motion.span>
+          </AnimatePresence>
+          <span className="font-mono text-2xs tabular-nums text-faint">
+            {index + 1} / {STEPS.length}
+          </span>
+        </div>
+
+        <div className="nm-raised relative flex flex-1 flex-col overflow-hidden rounded-3xl p-9">
+          {/* A hairline of accent along the top edge. Small, but it is what
+              stops the panel reading as a plain grey rectangle. */}
+          <div
+            className="pointer-events-none absolute inset-x-10 top-0 h-px"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, rgb(var(--accent) / 0.55), transparent)",
+            }}
+          />
+
           <AnimatePresence mode="wait">
             <motion.div
               key={step}
@@ -55,12 +177,21 @@ export function Onboarding({ onDone }: { onDone(): void }) {
               transition={{ duration: 0.22, ease: EASE }}
               className="flex flex-1 flex-col"
             >
+              {!HERO_STEPS.has(step) && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.86 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.06, duration: 0.26, ease: EASE }}
+                  className="nm-raised-sm mb-5 flex h-11 w-11 items-center justify-center rounded-2xl text-accent"
+                >
+                  <Icon name={meta.icon} size={19} />
+                </motion.div>
+              )}
               {step === "welcome" && <Welcome />}
               {step === "microphone" && <MicrophoneStep />}
               {step === "hardware" && <HardwareStep />}
               {step === "ai" && <AiStep />}
               {step === "shortcut" && <ShortcutStep />}
-              {step === "try" && <TryStep />}
               {step === "done" && <Done />}
             </motion.div>
           </AnimatePresence>
@@ -74,10 +205,11 @@ export function Onboarding({ onDone }: { onDone(): void }) {
             </Button>
           </div>
         </div>
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
+
 
 function Title({ title, description }: { title: string; description: string }) {
   return (
@@ -89,42 +221,101 @@ function Title({ title, description }: { title: string; description: string }) {
 }
 
 function Welcome() {
+  const bars = [
+    { x: 3.2, h: 6 },
+    { x: 7.6, h: 11 },
+    { x: 12, h: 17 },
+    { x: 16.4, h: 12 },
+    { x: 20.8, h: 7 },
+  ];
+  const claims: { icon: IconName; label: string }[] = [
+    { icon: "shield", label: "Runs offline" },
+    { icon: "keyboard", label: "Any application" },
+    { icon: "sparkle", label: "No account" },
+  ];
+
   return (
     <div className="flex flex-1 flex-col items-center justify-center text-center">
-      <div className="nm-raised mb-6 flex h-20 w-20 items-center justify-center rounded-3xl">
-        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          {[
-            { x: 3.2, h: 6 },
-            { x: 7.6, h: 11 },
-            { x: 12, h: 17 },
-            { x: 16.4, h: 12 },
-            { x: 20.8, h: 7 },
-          ].map((bar, i) => (
-            <motion.rect
-              key={i}
-              x={bar.x - 1.1}
-              width="2.2"
-              rx="1.1"
-              fill="rgb(var(--accent))"
-              opacity={0.55 + i * 0.11}
-              initial={{ height: 4, y: 10 }}
-              animate={{ height: bar.h, y: 12 - bar.h / 2 }}
-              transition={{ delay: i * 0.06, duration: 0.4, ease: EASE }}
-            />
-          ))}
-        </svg>
+      <div className="relative mb-7">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            background: "radial-gradient(circle, rgb(var(--accent) / 0.22), transparent 68%)",
+          }}
+        />
+        <motion.div
+          className="nm-raised relative flex h-20 w-20 items-center justify-center rounded-3xl"
+          initial={{ scale: 0.82, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.42, ease: EASE }}
+        >
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            {bars.map((bar, i) => (
+              <motion.rect
+                key={i}
+                x={bar.x - 1.1}
+                width="2.2"
+                rx="1.1"
+                fill="rgb(var(--accent))"
+                opacity={0.55 + i * 0.11}
+                initial={{ height: 4, y: 10 }}
+                animate={{ height: bar.h, y: 12 - bar.h / 2 }}
+                transition={{ delay: 0.2 + i * 0.06, duration: 0.4, ease: EASE }}
+              />
+            ))}
+          </svg>
+        </motion.div>
       </div>
-      <h1 className="text-[24px] font-semibold tracking-tight text-ink">Welcome to LocalFlow</h1>
-      <p className="mt-3 max-w-md text-[13px] leading-relaxed text-muted">
-        Hold a key anywhere in Windows, say what you mean, and let go. Polished text appears at your
-        cursor.
-      </p>
-      <p className="mt-4 max-w-md text-2xs leading-relaxed text-faint">
+
+      <motion.h1
+        className="text-[26px] font-semibold tracking-tight text-ink"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.12, duration: 0.34, ease: EASE }}
+      >
+        Welcome to LocalFlow
+      </motion.h1>
+
+      <motion.p
+        className="mt-3 max-w-md text-[13.5px] leading-relaxed text-muted"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.19, duration: 0.34, ease: EASE }}
+      >
+        Hold a key anywhere in Windows, say what you mean, and let go. Polished text appears at
+        your cursor.
+      </motion.p>
+
+      <motion.div
+        className="mt-6 flex flex-wrap items-center justify-center gap-2"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.26, duration: 0.34, ease: EASE }}
+      >
+        {claims.map((claim) => (
+          <span
+            key={claim.label}
+            className="nm-raised-sm inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-2xs font-medium text-muted"
+          >
+            <Icon name={claim.icon} size={12} className="text-accent" />
+            {claim.label}
+          </span>
+        ))}
+      </motion.div>
+
+      <motion.p
+        className="mt-5 max-w-md text-2xs leading-relaxed text-faint"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.34, duration: 0.34, ease: EASE }}
+      >
         Your voice is transcribed on this machine and never uploaded. Setup takes about a minute.
-      </p>
+      </motion.p>
     </div>
   );
 }
+
 
 // Read-aloud prompts. Each one is chosen to exercise something LocalFlow
 // actually has to get right - a spoken number, an address it must not try to
@@ -587,21 +778,18 @@ function keysOf(shortcut: string): string[] {
   return shortcut.split("+").map((k) => k.trim()).filter(Boolean);
 }
 
-/** Live shortcut tester.
+/** Confirms the shortcut actually fires.
  *
- * The keyboard hook is global and invisible, so a shortcut that does not fire
- * is indistinguishable from one that does nothing - which is the single most
- * confusing failure this app has. This reacts the instant the chord is seen,
- * and if nothing arrives it asks the hook what it is actually observing.
+ * The job here is one yes-or-no answer: did holding the combination reach
+ * LocalFlow's system-wide hook. Counters and failure taxonomies belong in the
+ * log, which records a hook heartbeat every twenty seconds; on this screen they
+ * were noise at the moment somebody just wants to know whether it worked.
  */
 function ShortcutTester({ shortcut }: { shortcut: string }) {
   const [held, setHeld] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [lastHold, setLastHold] = useState<number | null>(null);
-  const [probe, setProbe] = useState<HotkeyProbe | null>(null);
-  const [webviewSaw, setWebviewSaw] = useState(false);
   const downAt = useRef(0);
-  const openedAt = useRef(Date.now());
 
   useEffect(() => {
     const subscription = on<{ event: string }>("localflow:hotkey", (payload) => {
@@ -624,54 +812,8 @@ function ShortcutTester({ shortcut }: { shortcut: string }) {
     return () => window.clearInterval(timer);
   }, [held]);
 
-  // Cross-check: did the webview see the chord that the hook did not?
-  //
-  // A live hook swallows the combination before any window receives it, so if
-  // this fires while the hook counts nothing, keys are reaching the process but
-  // not the hook - a completely different fault from keys never arriving.
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      const parts = keysOf(shortcut);
-      const wanted = (parts[parts.length - 1] ?? "").toLowerCase();
-      const pressed = event.key === " " ? "space" : event.key.toLowerCase();
-      if (pressed !== wanted) return;
-      const mods = parts.slice(0, -1).map((m) => m.toLowerCase());
-      if (mods.includes("ctrl") !== event.ctrlKey) return;
-      if (mods.includes("shift") !== event.shiftKey) return;
-      if (mods.includes("alt") !== event.altKey) return;
-      setWebviewSaw(true);
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [shortcut]);
-
-  // Only interrogate the hook once the user has plausibly tried: a diagnosis
-  // offered before anyone has pressed anything is just noise.
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      if (Date.now() - openedAt.current < 6000) return;
-      void api.hotkeyProbe().then(setProbe).catch(() => undefined);
-    }, 2500);
-    return () => window.clearInterval(timer);
-  }, []);
-
+  const verified = lastHold !== null;
   const keys = keysOf(shortcut);
-  const key = keys[keys.length - 1] ?? "";
-  const modifiers = keys.slice(0, -1).join(" + ");
-  const working = lastHold !== null || (probe?.matches ?? 0) > 0;
-
-  const trouble =
-    working || held || !probe
-      ? ""
-      : !probe.installed
-        ? "Windows has not granted LocalFlow a keyboard hook, so no shortcut can work. Restarting LocalFlow usually fixes it."
-        : !probe.enabled
-          ? "The shortcut is switched off right now - check that dictation is not paused in the tray."
-          : probe.key_without_chord > 0
-            ? `${key} is reaching LocalFlow, but without ${modifiers}. Hold ${modifiers} down first, then press ${key}.`
-            : webviewSaw
-              ? `LocalFlow's window received ${shortcut}, but the system-wide keyboard hook did not. Windows has stopped delivering keys to the hook - restarting LocalFlow reinstalls it.`
-              : "No key presses are reaching LocalFlow at all. Another application may be claiming this combination - try one of the alternatives below.";
 
   return (
     <div className="well relative mt-4 overflow-hidden p-6">
@@ -690,19 +832,6 @@ function ShortcutTester({ shortcut }: { shortcut: string }) {
           />
         )}
       </AnimatePresence>
-
-      {held &&
-        [0, 1].map((ring) => (
-          <motion.span
-            key={`ring-${ring}`}
-            aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-[42%] h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border"
-            style={{ borderColor: "rgb(var(--accent) / 0.4)" }}
-            initial={{ scale: 0.55, opacity: 0.55 }}
-            animate={{ scale: 2.3, opacity: 0 }}
-            transition={{ duration: 1.7, repeat: Infinity, delay: ring * 0.85, ease: "easeOut" }}
-          />
-        ))}
 
       <div className="relative flex items-center justify-center gap-2.5">
         {keys.map((cap, index) => (
@@ -724,28 +853,17 @@ function ShortcutTester({ shortcut }: { shortcut: string }) {
       <div className="relative mt-5 text-center">
         {held ? (
           <p className="text-[13px] font-medium text-accent">
-            Reading your shortcut…{" "}
+            Holding…{" "}
             <span className="font-mono tabular-nums">{(elapsed / 1000).toFixed(1)}s</span>
           </p>
-        ) : lastHold !== null ? (
+        ) : verified ? (
           <p className="flex items-center justify-center gap-1.5 text-[13px] font-medium text-positive">
             <Icon name="check" size={13} />
-            Shortcut detected - held for {(lastHold / 1000).toFixed(1)}s
+            Shortcut verified
           </p>
         ) : (
           <p className="text-[13px] text-muted">
-            Hold <span className="font-medium text-ink">{shortcut}</span> now to test it
-          </p>
-        )}
-        {trouble && (
-          <p className="mx-auto mt-2.5 max-w-sm text-2xs leading-relaxed text-warning">{trouble}</p>
-        )}
-        {probe && !working && (
-          <p className="mt-2 font-mono text-[10px] tracking-tight text-faint">
-            hook {probe.installed ? "installed" : "missing"} ·{" "}
-            {probe.enabled ? "enabled" : "disabled"} · {probe.primary || "unset"} ·{" "}
-            {probe.matches} matched · {probe.key_without_chord} partial ·{" "}
-            {webviewSaw ? "window saw it" : "window saw nothing"}
+            Hold <span className="font-medium text-ink">{shortcut}</span> to check it
           </p>
         )}
       </div>
@@ -835,89 +953,91 @@ function ShortcutStep() {
   );
 }
 
-function TryStep() {
-  const settings = useAppStore((s) => s.settings);
-  const [heard, setHeard] = useState<string>("");
-  const [state, setState] = useState<string>("idle");
-
-  useEffect(() => {
-    const subscriptions = [
-      onBackend<{ state: string }>("session.state", (payload) => setState(payload.state)),
-      onBackend<{ text: string }>("session.partial", (payload) => setHeard(payload.text)),
-    ];
-    const resultSub = api
-      .diagnostics()
-      .then(() => undefined)
-      .catch(() => undefined);
-    void resultSub;
-    return () => subscriptions.forEach((p) => void p.then((off) => off()));
-  }, []);
-
-  return (
-    <div>
-      <Title
-        title="Try it now"
-        description="Click into the box below, then hold your shortcut and say something."
-      />
-
-      <ReadAloud />
-
-      <textarea
-        className="input mb-4 min-h-[130px] resize-none font-sans text-[14px] leading-relaxed"
-        placeholder="Your dictated text will appear right here…"
-        aria-label="Practice area"
-      />
-
-      <div className="well flex items-center gap-3 p-4">
-        <StatusDot
-          tone={state === "listening" ? "positive" : state === "processing" ? "warning" : "neutral"}
-        />
-        <span className="text-2xs text-muted">
-          {state === "listening"
-            ? heard
-              ? `Heard: ${heard}`
-              : "Listening…"
-            : state === "processing"
-              ? "Processing…"
-              : `Hold ${settings?.hotkeys.primary} and speak`}
-        </span>
-      </div>
-
-      <p className="hint mt-4">
-        This works in any application - Notepad, Gmail, Slack, VS Code, your terminal. LocalFlow
-        adapts its formatting to whichever one has your cursor.
-      </p>
-    </div>
-  );
-}
-
 function Done() {
   const settings = useAppStore((s) => s.settings);
+  const tips: { icon: IconName; title: string; detail: string }[] = [
+    {
+      icon: "book",
+      title: "Add your vocabulary",
+      detail: "Teach it names and jargon it would otherwise mishear.",
+    },
+    {
+      icon: "snippet",
+      title: "Create snippets",
+      detail: "Say a phrase, insert a saved block of text.",
+    },
+    {
+      icon: "refresh",
+      title: "Say “undo that”",
+      detail: "Removes what it just inserted.",
+    },
+  ];
+
   return (
     <div className="flex flex-1 flex-col items-center justify-center text-center">
+      {/* The tick draws itself.
+          A tile that springs in and a ring that scales outward both animate the
+          container rather than the outcome, and a scaled border blurs as it
+          grows. Stroking the path is the one motion here that is actually about
+          the thing being confirmed, so it is the only one kept. */}
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+        className="nm-raised mb-6 flex h-16 w-16 items-center justify-center rounded-3xl"
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: EASE }}
-        className="nm-raised mb-6 flex h-16 w-16 items-center justify-center rounded-3xl text-positive"
       >
-        <Icon name="check" size={28} />
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <motion.path
+            d="M4.8 12.6 L9.9 17.7 L19.2 6.9"
+            stroke="rgb(var(--positive))"
+            strokeWidth="2.3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{
+              pathLength: { delay: 0.16, duration: 0.4, ease: [0.65, 0, 0.35, 1] },
+              opacity: { delay: 0.16, duration: 0.08 },
+            }}
+          />
+        </svg>
       </motion.div>
-      <h2 className="text-[20px] font-semibold tracking-tight text-ink">You are set up</h2>
-      <p className="mt-2.5 max-w-sm text-[13px] leading-relaxed text-muted">
+
+      <motion.h2
+        className="text-[22px] font-semibold tracking-tight text-ink"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.42, duration: 0.32, ease: EASE }}
+      >
+        You are set up
+      </motion.h2>
+      <motion.p
+        className="mt-2.5 max-w-sm text-[13px] leading-relaxed text-muted"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.48, duration: 0.32, ease: EASE }}
+      >
         Hold <kbd className="kbd mx-0.5">{settings?.hotkeys.primary}</kbd> in any application and
         start talking. LocalFlow lives in your system tray.
-      </p>
+      </motion.p>
+
       <div className="mt-6 grid w-full max-w-sm grid-cols-1 gap-2 text-left">
-        {[
-          ["Add your vocabulary", "Teach it names and jargon it would otherwise mishear."],
-          ["Create snippets", "Say a phrase, insert a saved block of text."],
-          ["Say “undo that”", "Removes what it just inserted."],
-        ].map(([title, detail]) => (
-          <div key={title} className="nm-raised-sm rounded-xl px-4 py-2.5">
-            <p className="text-2xs font-medium text-ink">{title}</p>
-            <p className="text-2xs text-muted">{detail}</p>
-          </div>
+        {tips.map((tip, i) => (
+          <motion.div
+            key={tip.title}
+            className="nm-raised-sm flex items-start gap-3 rounded-xl px-4 py-2.5"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.56 + i * 0.06, duration: 0.28, ease: EASE }}
+          >
+            <span className="mt-0.5 text-accent">
+              <Icon name={tip.icon} size={13} />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-2xs font-medium text-ink">{tip.title}</span>
+              <span className="block text-2xs text-muted">{tip.detail}</span>
+            </span>
+          </motion.div>
         ))}
       </div>
     </div>

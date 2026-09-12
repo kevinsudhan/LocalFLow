@@ -1,8 +1,17 @@
 //! The floating dictation HUD window.
 //!
 //! The HUD must never steal focus: the whole point is that the user keeps
-//! typing into whatever app they were in. It is created non-focusable and every
-//! show path uses `show()` without `set_focus()`.
+//! typing into whatever app they were in.
+//!
+//! Being created non-focusable and never calling `set_focus()` is not
+//! sufficient. `show()` reaches `ShowWindow(SW_SHOW)`, which *activates* the
+//! window, and Windows only refuses cross-process activation - within a
+//! process it is allowed. So the HUD would quietly steal activation from
+//! LocalFlow's own window and the dictated text would be pasted into a
+//! transparent overlay with no text field. Dictating into any other
+//! application was unaffected, which is what made it look like an
+//! onboarding bug. `WS_EX_NOACTIVATE` plus `SW_SHOWNOACTIVATE` makes the
+//! guarantee structural rather than a convention about which calls to avoid.
 
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, LogicalSize, Manager, PhysicalPosition, WebviewWindow};
@@ -66,6 +75,10 @@ impl Hud {
         // The HUD has no controls, so it must never eat a click: the window is
         // a transparent rectangle over the user's real work.
         let _ = window.set_ignore_cursor_events(true);
+        #[cfg(windows)]
+        if show_without_activating(&window) {
+            return;
+        }
         // Deliberately no set_focus(): stealing focus would break insertion.
         let _ = window.show();
     }
@@ -92,6 +105,30 @@ impl Hud {
     }
 }
 
+
+/// Show the HUD without ever making it the active window.
+///
+/// Returns false if the platform handle was unavailable, so the caller can
+/// fall back to the ordinary show path.
+#[cfg(windows)]
+fn show_without_activating(window: &WebviewWindow) -> bool {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GetWindowLongPtrW, SetWindowLongPtrW, ShowWindow, GWL_EXSTYLE, SW_SHOWNOACTIVATE,
+        WS_EX_NOACTIVATE,
+    };
+
+    let Ok(handle) = window.hwnd() else { return false };
+    let hwnd = HWND(handle.0 as _);
+    unsafe {
+        let style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+        if style != 0 {
+            SetWindowLongPtrW(hwnd, GWL_EXSTYLE, style | WS_EX_NOACTIVATE.0 as isize);
+        }
+        let _ = ShowWindow(hwnd, SW_SHOWNOACTIVATE);
+    }
+    true
+}
 /// Work out where the HUD belongs on the monitor that owns the focused window.
 fn compute_position(
     app: &AppHandle,

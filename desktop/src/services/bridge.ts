@@ -77,6 +77,8 @@ export interface HotkeyProbe {
   primary: string;
   matches: number;
   key_without_chord: number;
+  seen_events: number;
+  rearms: number;
 }
 
 export interface DeviceReport {
